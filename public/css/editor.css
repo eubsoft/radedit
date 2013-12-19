@@ -1,0 +1,245 @@
+* {
+	margin: 0;
+	padding: 0;
+}
+
+html {
+	height: 100%;
+	background: #111;
+	font: normal 12px Arial;
+	overflow: hidden;
+}
+
+#menu {
+	position: absolute;
+	left: 0;
+	top: 0;
+	right: 0;
+	height: 2.3em;
+	background: #222;
+	border-bottom: 0.1em solid #555;
+}
+
+#menu, #tree {
+	user-select: none; 
+	-o-user-select: none; 
+	-moz-user-select: none; 
+	-khtml-user-select: none; 
+	-webkit-user-select: none; 
+}
+
+#content {
+	position: absolute;
+	left: 0;
+	top: 2.4em;
+	right: 0;
+	bottom: 0;
+}
+
+.menu {
+	float: left;
+	padding: 0.2em 0.4em;
+	cursor: pointer;
+}
+
+.menu.on, .menu.error {
+	border-top-left-radius: 0.5em;
+	border-top-right-radius: 0.5em;
+}
+
+#menu svg {
+	margin-top: 0.1em;
+	width: 1.7em;
+	height: 1.7em;
+}
+
+.menu.on {
+	background: #555;
+}
+
+#editor {
+	height: 100%;
+}
+
+.area, .CodeMirror {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	background: #000;
+	color: #ddd;
+}
+
+#tree {
+	padding: 0.5em;
+	right: auto;
+	min-width: 25em;
+}
+
+.area {
+	z-index: 2;
+	display: none;
+	overflow: auto;
+	top: -0.1em;
+	border: 0.1em solid #555;
+	background: #111;
+}
+
+.on {
+	display: block !important;
+}
+
+.disabled {
+	opacity: 0.2;
+}
+
+.hidden {
+	display: none;
+}
+
+div.item {
+	white-space: nowrap;
+	padding: 0.1em 0;
+}
+
+div.file, div.tree {
+	padding-left: 1.6em;
+}
+
+div.item:hover {
+	background: #222;
+	cursor: pointer;
+}
+
+i.plus, i.folder, i.file {
+	display: inline-block;
+	width: 1.6em;
+	height: 1.6em;
+	vertical-align: middle;
+}
+
+i.folder, i.file {
+	margin-right: 0.3em;
+}
+
+div.tree {
+	display: none;
+}
+
+#console {
+	background: #000;
+	padding: 0.1em 0.3em;
+}
+
+#console>pre {
+	margin: 0;
+}
+
+#console>pre a {
+	text-decoration: none;
+	cursor: pointer;
+}
+
+#console>pre.log { color: #bbb; }
+#console>pre.trace { color: #0ee; }
+#console>pre.debug {color: #e0e; }
+#console>pre.info { color: #0b0; }
+#console>pre.warn { color: #ee0; }
+#console>pre.error { color: #e00; }
+
+#console>pre.log a { border-bottom: solid 0.1em #444; }
+#console>pre.trace a { border-bottom: solid 0.1em #066; }
+#console>pre.debug a { border-bottom: solid 0.1em #606; }
+#console>pre.info a { border-bottom: solid 0.1em #060; }
+#console>pre.warn a { border-bottom: solid 0.1em #660; }
+#console>pre.error a { border-bottom: solid 0.1em #600; }
+
+#console>pre.log a:hover { color: #ccc; }
+#console>pre.trace a:hover { color: #0ff; }
+#console>pre.debug a:hover { color: #f0f; }
+#console>pre.info a:hover { color: #0c0; }
+#console>pre.warn a:hover { color: #ff0; }
+#console>pre.error a:hover { color: #f00; }
+
+#consoleButton.error { background: #900; }
+
+#searchBox {
+	position: absolute;
+	left: 11em;
+	right: 7.5em;
+	height: 1.8em;
+	padding: 0;
+	margin: 0.2em 0;
+}
+
+#searchBox svg {
+	position: absolute;
+	z-index: 2;
+	left: 0.1em;
+}
+
+#searchBox div {
+	position: relative;
+	width: 100%;
+	height: 100%;
+}
+
+#searchBox input {
+	width: 100%;
+	height: 100%;
+	border-radius: 1em;
+	border: 0.1em solid #555;
+	background: #333;
+	padding: 0 0.6em 0 2em;
+	outline: none;
+	color: #999;
+	/* transition: border 0.2s, width 0.2s, background 0.2s, color 0.2s; */
+}
+
+#searchBox input.focus, #search>div {
+	background: #eee;
+	color: #000;
+	border: 0.1em solid #fff;
+}
+
+#search {
+	position: absolute;
+	z-index: 3;
+	top: -0.2em;
+	left: 12em;
+	right: 5.4em;
+	max-height: 90%;
+	overflow: auto;
+}
+
+#search>div {
+	border-top: 0;
+	border-bottom: 0.1em solid #f8f8f8;
+	cursor: pointer;
+	padding: 0.3em 1em;
+	color: #333;
+	overflow: hidden;
+}
+
+#search>div>b {
+	color: #000;
+}
+
+#search>div>i {
+	color: #666;
+	font-style: normal;
+}
+
+#search>div:hover {
+	background: #fff;
+}
+
+#avatar {
+	float: right;
+	width: 2em;
+	height: 2em;
+	margin: 0.1em;
+	border: 0.1em solid #999;
+	border-radius: 0.2em;
+}
