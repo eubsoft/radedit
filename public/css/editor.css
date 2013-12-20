@@ -166,7 +166,7 @@ div.tree {
 
 #searchBox {
 	position: absolute;
-	left: 11em;
+	left: 13em;
 	right: 7.5em;
 	height: 1.8em;
 	padding: 0;
@@ -207,7 +207,7 @@ div.tree {
 	position: absolute;
 	z-index: 3;
 	top: -0.2em;
-	left: 12em;
+	left: 14em;
 	right: 5.4em;
 	max-height: 90%;
 	overflow: auto;

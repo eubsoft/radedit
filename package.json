@@ -14,6 +14,14 @@
     {
       "name": "Sean Aryana",
       "email": "seanaryana@gmail.com"
+    },
+    {
+      "name": "Kaushik Shankar",
+      "email": "skaushik92@gmail.com"
+    },
+    {
+      "name": "Eric Mickelsen",
+      "email": "mickelsen.eric@gmail.com"
     }
   ],
   "dependencies": {
@@ -27,13 +35,7 @@
     "mocha": "*",
     "should": "*",
     "uglify-js": "*",
-    "clean-css": "*",
-    "passport": "*",
-    "passport-local": "*",
-    "passport-oauth": "*",
-    "passport-facebook": "*",
-    "passport-google": "*",
-    "passport-twitter": "*"
+    "clean-css": "*"
   },
   "devDependencies": {
   },
@@ -49,7 +51,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/sameubank/RadEdit"
+    "url": "https://github.com/eubsoft/radedit"
   },
   "main": "index",
   "engines": {

@@ -40,8 +40,7 @@ hideMenuArea = ->
 
 # Enable or disable the save button
 enableSaveButton = (enable) ->
-	disabled = not enable
-	flipClass 'saveButton', 'disabled', disabled
+	flipClass 'saveButton', 'disabled', not enable
 
 # Show the status of the connection: (on|off|waiting)
 $statusButton = getElement 'statusButton'

@@ -40,6 +40,8 @@ socket.on 'radedit:got', (json) ->
 	flipClass 'tree', 'on', 0
 	rel = json.rel
 	code = json.code
+	if typeof code is 'undefined'
+		code = ''
 	extension = rel.replace /^.*\./, ''
 	mode = modes[extension] or 'text'
 
