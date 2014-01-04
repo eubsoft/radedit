@@ -15,7 +15,7 @@ reconnect = (delay) ->
 	reconnect.t = setTimeout(->
 		reconnect delay * RECONNECT_BACKOFF_FACTOR
 		if DEV_MODE
-			getJson '/ping', (data) ->
+			getJson '/ping', ->
 				clearTimeout reconnect.t
 				refresh()
 		else
@@ -29,12 +29,12 @@ refresh = ->
 # When the server disconnects, try to reconnect.
 socket.on 'disconnect', ->
 	reconnect RECONNECT_DELAY
-	showConnectionStatus 'off'
+	showConnectionStatus '_OFF'
 
 # When the server reconnects, cancel reconnection retries.
 socket.on 'connect', ->
 	clearTimeout reconnect.t
-	showConnectionStatus 'on'
+	showConnectionStatus '_ON'
 
 # Wait to listen for refresh signals in case lingering calls trickle in.
 setTimeout(->

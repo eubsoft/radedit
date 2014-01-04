@@ -1,7 +1,7 @@
 # Kindles look better if they're zoomed in a bit.
 if /Silk/.test navigator.userAgent
-	getElementsByTagName('body')[0].style.fontSize = '20px'
-	forEach getElementsByTagName('svg'), (element) ->
+	document.body.style.fontSize = '20px'
+	forEach $$('svg'), (element) ->
 		element.style.zoom = '180%'
 
 modes =
@@ -18,9 +18,10 @@ modes =
 	xml: 'xml'
 
 editor = null
-currentRel = null
+currentFile = null
 lineNumber = null
 charNumber = null
+files = {}
 
 fetchFile = (rel) ->
 	parts = rel.split /:/
@@ -28,16 +29,19 @@ fetchFile = (rel) ->
 	lineNumber = parts[1]
 	charNumber = parts[2]
 	socket.emit 'radedit:get', {rel: rel}
+	removeClass '_TREE__BUTTON', '_ON'
+	removeClass '_TREE', '_ON'
+	removeClass '_LOADING', '_HIDDEN'
 
 saveFile = ->
-	if hasClass 'saveButton', 'disabled'
+	if hasClass '_SAVE__BUTTON', '_DISABLED'
 		return
 	enableSaveButton false
-	socket.emit 'radedit:save', {rel: currentRel}
+	socket.emit 'radedit:save', {rel: currentFile.rel}
 
 socket.on 'radedit:got', (json) ->
-	flipClass 'treeButton', 'on', 0
-	flipClass 'tree', 'on', 0
+	currentFile = json
+	currentFile.revision = 0
 	rel = json.rel
 	code = json.code
 	if typeof code is 'undefined'
@@ -48,8 +52,8 @@ socket.on 'radedit:got', (json) ->
 	location.hash = '#' + rel
 	document.title = "RadEdit: #{rel}"
 
-	container = getElement 'content'
-	editor = CodeMirror(container,
+	$container = $ '_CONTENT'
+	editor = CodeMirror($container,
 		mode: mode
 		smartIndent: true
 		indentWithTabs: true
@@ -57,8 +61,8 @@ socket.on 'radedit:got', (json) ->
 		autofocus: true
 		value: code
 	)
-	currentRel = rel
 	enableSaveButton json.canSave
+	addClass '_LOADING', '_HIDDEN'
 
 	editor.on 'beforeChange', (cm, change) ->
 		for text, i in change.text
@@ -83,7 +87,10 @@ socket.on 'radedit:got', (json) ->
 			removed.length
 			text
 		]
-		socket.emit 'radedit:change', {rel: rel, change: change}
+		socket.emit 'radedit:change',
+			rel: rel
+			change: change
+			revision: currentFile.revision++
 		enableSaveButton true
 
 socket.on 'radedit:changed', (json) ->

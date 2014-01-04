@@ -1,7 +1,8 @@
-global.fs = require 'fs'
-global.events = require 'events'
 tracer = require 'tracer'
 colors = require 'colors'
+events = require 'events'
+fs = require 'fs'
+radedit = require 'radedit'
 
 symbols =
 	log: '\u279C'
@@ -11,7 +12,7 @@ symbols =
 	info: '\u2714'
 	error: '\u2716'
 
-escapedRoot = documentRoot.replace /([^\d\w])/ig, '\\$1'
+escapedRoot = radedit.appPath.replace /([^\d\w])/ig, '\\$1'
 pathPattern = new RegExp escapedRoot + '[\\\\\\/]([^\\)\\s]+)', 'g'
 
 colorConsole = tracer.colorConsole(
@@ -36,8 +37,7 @@ colorConsole = tracer.colorConsole(
 		addLine [data.title, output]
 )
 
-
-global.log = colorConsole.log
+log = module.exports = colorConsole.log
 for own method of symbols
 	log[method] = colorConsole[method]
 
@@ -53,4 +53,5 @@ addLine = (line) ->
 	process.emit 'radedit:log', [line]
 
 process.on 'uncaughtException', (err) ->
+	log err
 	log.error err

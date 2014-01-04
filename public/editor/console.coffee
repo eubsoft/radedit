@@ -1,27 +1,36 @@
 MAX_CONSOLE_LINES = 1000
 
-consoleArea = getElement 'console'
+$console = $ '_CONSOLE'
+$consoleButton = $ '_CONSOLE__BUTTON'
+
+consoleClasses =
+	log: '_LOG'
+	trace: '_TRACE'
+	debug: '_DEBUG'
+	info: '_INFO'
+	warn: '_WARN'
+	error: '_ERROR'
 
 scrollConsole = ->
-	consoleArea.scrollTop = consoleArea.scrollHeight
+	$console.scrollTop = $console.scrollHeight
 
 consoleLineCount = 0
 socket.on 'radedit:log', (lines) ->
 	previousLineCount = consoleLineCount
 	forEach lines, (line) ->
 		if ++consoleLineCount > MAX_CONSOLE_LINES
-			removeElement firstChild consoleArea
-		className = line[0]
+			removeElement getFirstChild $console
+		className = consoleClasses[line[0]]
 		innerText = line[1]
-		line = addElement consoleArea, 'pre'
+		line = addElement $console, 'pre'
 		setClass line, className
 		setText line, innerText
-		links = getElementsByTagName 'a', line
+		links = $$ 'a', line
 		if className is 'error' and previousLineCount
-			flipClass 'consoleButton', 'error', true
+			addClass $consoleButton, '_ERROR'
 	scrollConsole()
 
-delegate consoleArea, 'a', 'click', (event, element, target) ->
-	rel = getText(target).replace /\\/g, '/'
+delegate $console, 'a', 'click', (event, $element, $target) ->
+	rel = getText($target).replace /\\/g, '/'
 	fetchFile rel
 	hideMenuArea()

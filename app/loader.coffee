@@ -1,22 +1,44 @@
-global.fs = require 'fs'
-global.jade = require 'jade'
-global.events = require 'events'
-global.coffee = require 'coffee-script'
+fs = require 'fs'
+jade = require 'jade'
+events = require 'events'
+coffee = require 'coffee-script'
+uglify = require 'uglify-js'
+clean = require 'clean-css'
+clean = new clean
 
-global.isDevMode = true
-global.isWindows = /\bwin/i.test process.platform
-global.startTime = new Date
-
-global.loader =
-	tree: {}
-	cache: {}
-	views: {}
-	public: {}
+radedit = require 'radedit'
+app = radedit.app
+config = radedit.config
+appPath = radedit.appPath
+io = radedit.io
+log = radedit.log
 
 APP_RESTART_DELAY = 10
 CLIENT_REFRESH_DELAY = 50
 PUBLIC_FILE_COMPILE_DELAY = 5
 DIR_WALK_INTERVAL = 1000
+
+loader =
+module.exports =
+	tree: {}
+	cache: {}
+	views: {}
+	public: {}
+	isDevMode: true
+	shouldMinify: true
+	isWindows: /\bwin/i.test process.platform
+	startTime: new Date
+	vTag: 0
+
+	updateVTag: ->
+		chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+		number = Math.round (new Date).getTime() / 1000
+		radix = chars.length
+		vTag = chars[number % radix]
+		while number >= radix
+			number = Math.floor number / radix - 0.999
+			vTag = chars[number % radix] + vTag
+		loader.vTag = vTag
 
 mime =
 	coffee: 'text/coffeescript'
@@ -36,13 +58,15 @@ mime =
 
 
 getRel = (path) ->
-	if path.substr(0, documentRoot.length) is documentRoot
-		return path.substr documentRoot.length + 1
+	if path.substr(0, appPath.length) is appPath
+		return path.substr appPath.length + 1
 	else
 		return path.replace modulesPattern, '../node_modules/'
 
+
 getExtension = (file) ->
 	return file.replace /.*\./, ''
+
 
 loader.getMime =
 getMime = (path) ->
@@ -57,21 +81,23 @@ viewsPattern = /(^|[\/\\])views[\/\\]/
 moduleRoot = __dirname.replace /[\/\\]app$/, ''
 publicRel = getRel moduleRoot + '/public'
 
-publicAssets =
+radeditPublic =
 	"/radedit.css": [
 		"css/editor.css"
 		"css/codemirror.css"
 	],
 	"/radedit.js": [
+		"jymin/io.js"
+		"jymin/closure_head.js"
 		"jymin/logging.js"
 		"jymin/strings.js"
 		"jymin/collections.js"
+		"jymin/cookies.js"
 		"jymin/dom.js"
 		"jymin/events.js"
 		"jymin/forms.js"
 		"jymin/ajax.js"
 		"jymin/md5.js"
-		"jymin/io.js"
 		"jymin/dollar.js"
 		"codemirror/codemirror.js"
 		"codemirror/coffeescript.js"
@@ -86,22 +112,24 @@ publicAssets =
 		"editor/storage.coffee"
 		"editor/icons.coffee"
 		"editor/key_bindings.coffee"
-		"editor/menu.coffee"
+		"editor/nav.coffee"
 		"editor/refresh.coffee"
+		"editor/menu.coffee"
 		"editor/tree.coffee"
 		"editor/console.coffee"
 		"editor/search.coffee"
 		"editor/editor.coffee"
+		"jymin/closure_foot.js"
 	]
 
-for href, components of publicAssets
+for href, components of radeditPublic
 	for componentRel, index in components
 		components[index] = publicRel + '/' + componentRel
 	config.public[href] = components
 
 modifiedTimes = {}
 
-ignorePattern = '.\n' + fs.readFileSync documentRoot + '/.gitignore'
+ignorePattern = '.\n' + fs.readFileSync appPath + '/.gitignore'
 ignorePattern = ignorePattern.replace /(^\s|\s+$)/, ''
 ignorePattern = ignorePattern.replace /\./g, '\\.'
 ignorePattern = ignorePattern.replace /\*/g, '.*'
@@ -109,9 +137,10 @@ ignorePattern = ignorePattern.replace /\s+/g, '|'
 ignorePattern = ignorePattern.replace /\|node_modules/g, ''
 ignorePattern = new RegExp "^(#{ignorePattern})$"
 
+
 loader.loadFiles =
 loadFiles = (path) ->
-	path = path or documentRoot
+	path = path or appPath
 	walk path, checkFile, checkDir
 	buildTree()
 	setTimeout(->
@@ -121,7 +150,7 @@ loadFiles = (path) ->
 # Load all files
 setImmediate ->
 	loadFiles moduleRoot
-	loadFiles documentRoot
+	loadFiles appPath
 
 
 class Node
@@ -188,50 +217,76 @@ loadModule = (path) ->
 	require path
 	refreshClients 'module'
 
+
+lintFile = (path, content, callback) ->
+
+	doLinting = (err, content) ->
+		if err
+			throw err
+		extension = getExtension path
+		# TODO: Add linting.
+		callback content
+
+	if typeof content is 'string'
+		doLinting null, content
+	else
+		fs.readFile path, doLinting
+
+
 loader.loadFile =
-loadFile = (path, isReload) ->
+loadFile = (path, reloadContent) ->
 	rel = getRel path
 
-	if isReload
+	if reloadContent
 		log "Updated: #{path}"
+		loader.updateVTag()
 
 	# Load public files.
 	if publicPattern.test rel
-		fs.readFile path, (err, content) ->
-			loadPublic path, content
+		lintFile path, reloadContent, (content) ->
+			content = loadPublic path, content
 			type = getMime(path) or 'text/html'
 			href = rel.replace modulesPattern, ''
 			href = href.replace publicPattern, '$1'
 			href = href.replace /\.html$/, ''
 			href = href.replace /\.coffee$/, '.js'
-			routePublic '/' + href, content
+			href = '/' + href
+			asset = createPublicAsset href, content
+			routePublic href, asset
 			search.update rel, content
 
 	# Load jade views for the server.
 	else if getExtension(rel) is 'jade'
 		# Load dependent views
-		loadView = (name, path) ->
-			fs.readFile path, (err, content) ->
-				view = jade.compile(content,
-					filename: path
-				)
-				loader.views[name] = view
-				loader.views[name].path = path
-				refreshClients 'views'
-				search.update rel, content
+		loadView = (name, path, shouldUpdate) ->
+			if path
+				lintFile path, reloadContent, (content) ->
+					content = '' + content
+					view = jade.compile content, {filename: path}
+					view.path = path
+					view.minified = content
+					view.afterShrunk = ->
+						minPath = path.replace /\.jade$/, '.min.jade'
+						minCode = view.minified.replace /(^|\n)(\s+include\s+\S+)/g, '$1$2.min'
+						view.min = jade.compile minCode, {filename: minPath}
+					loader.views[name] = view
+					radedit.shrinker.shrink view
+					refreshClients 'views'
+					if shouldUpdate
+						search.update rel, content
 
 		name = rel.replace /\.jade$/, ''
 		name = name.replace modulesPattern, ''
 		name = name.replace viewsPattern, '$1'
-		loadView name, path
+		loadView name, path, true
 
-		for otherName of loader.views
+		for own otherName of loader.views
 			if otherName isnt name
 				loadView otherName, loader.views[otherName].path
 
 	# Load modules
 	else
-		if isWindows
+		if loader.isWindows
 			path = path.replace /\//g, '\\'
 		if /(coffee|js|json)$/.test path
 			# If it's not the first time, we may need to reload or restart.
@@ -242,12 +297,12 @@ loadFile = (path, isReload) ->
 					module.exports.unload()
 					loadModule path
 				# Non-reloadable modules require an application restart.
-				else if isReload
+				else if reloadContent
 					return restartApp path
 			else
 					loadModule path
-		
-		fs.readFile path, (err, content) ->
+
+		lintFile path, reloadContent, (content) ->
 			search.update rel, content
 
 
@@ -268,48 +323,99 @@ walk = (dir, fileCallback, dirCallback) ->
 						fileCallback path, stat if fileCallback
 
 
-publicAssets =
-	content: {}
+loader.public =
+	assets: {}
 	parents: {}
 	groups: {}
 	timeouts: {}
 
 
+createPublicAsset = (rel, content) ->
+	extension = getExtension rel
+	minified = null
+	if extension is 'coffee' or extension is 'js'
+		minified = minifyJs '' + content
+	if extension is 'css'
+		minified = clean.minify '' + content
+	asset =
+		rel: rel
+		content: content
+		minified: minified
+	radedit.shrinker.shrink asset
+	return asset
+
+
+minifyJs = (js) ->
+	try
+		result = uglify.minify js, {fromString: true}
+		return result.code
+	catch e
+		return js
+
+
 loadPublic = (path, content) ->
-	if /\.coffee$/.test path
+	rel = getRel path
+	extension = getExtension path
+	if extension is 'coffee'
 		try
-			content = coffee.compile('' + content)
-			content = content.replace(/^\(function\(\) \{/, '')
-			content = content.replace(/\}\)\.call\(this\);[\r\n]*$/, '')
+			content = coffee.compile '' + content
+			content = content.replace /^\(function\(\) \{/, ''
+			content = content.replace /\}\)\.call\(this\);[\r\n]*$/, ''
 		catch e
 			log.debug "Can't compile #{path}"
 			log.error e
-	rel = getRel path
-	publicAssets.content[rel] = content
-	if groups = publicAssets.parents[rel]
-		for group in groups
-			clearTimeout publicAssets.timeouts[group]
-			publicAssets.timeouts[group] = setTimeout( ->
+
+	asset = createPublicAsset rel, content
+	loader.public.assets[rel] = asset
+	if /jymin/.test rel
+		something = true # TODO: Figure out why removing this fucks things up.
+	if groups = loader.public.parents[rel]
+		groups.forEach (group) ->
+			clearTimeout loader.public.timeouts[group]
+			loader.public.timeouts[group] = setTimeout(->
+				clearTimeout loader.public.timeouts[group]
 				compilePublic group
 			, PUBLIC_FILE_COMPILE_DELAY)
-
+	return asset
 
 compilePublic = (group) ->
+	extension = getExtension group
 	files = config.public[group]
 	code = ''
 	for file in files
-		code += "/* FILE: #{file} */\n"
-		code += publicAssets.content[file]
-	publicAssets.content[group] = code
-	routePublic group, code
-	clearTimeout publicAssets.timeouts[group]
+		asset = loader.public.assets[file]
+		if asset
+			code += "/* FILE: #{file} */\n"
+			code += asset.content + '\n'
+		else
+			log.warn 'Asset not found: ' + file
+			code += "/* FILE NOT FOUND: #{file} */\n"
+
+	asset = createPublicAsset group, code
+	loader.public.assets[group] = asset
+	routePublic group, asset
 
 
-routePublic = (href, content) ->
+routePublic = (href, asset) ->
 	type = getMime(href) or 'text/html'
+
 	app.get href, (request, response) ->
 		response.set "Content-Type", type
-		response.send content
+		if request.cookies.debug
+			response.send asset.content
+		else
+			response.send asset.minified or asset.content
+
+	taggedHref = href.replace /\.([a-z]+)$/, '.*.$1'
+	app.get taggedHref, (request, response) ->
+		response.set 'Content-Type', type
+		if request.cookies.debug
+			response.send asset.content
+		else
+			future = new Date(Date.now() + 1e11)
+			response.setHeader 'Expires', future.toUTCString()
+			response.send asset.minified or asset.content
+
 	refreshClients 'public'
 
 
@@ -317,8 +423,12 @@ mapPublicAssets = ->
 	groups = config.public
 	for group, files of groups
 		for file in files
-			list = publicAssets.parents[file] or (publicAssets.parents[file] = [])
-			list.push group if list.indexOf(group) < 0
+			list = loader.public.parents[file]
+			if not list
+				list = loader.public.parents[file] = []
+			if list.indexOf group < 0
+				list.push group
 
 
+loader.updateVTag()
 mapPublicAssets()

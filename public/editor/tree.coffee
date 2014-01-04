@@ -1,6 +1,6 @@
 toggleTree = ->
-	toggleClass 'treeButton', 'on'
-	toggleClass 'tree', 'on'
+	toggleClass '_TREE__BUTTON', '_ON'
+	toggleClass '_TREE', '_ON'
 
 class Node
 	constructor: (@parent, @name = '') ->
@@ -23,48 +23,48 @@ socket.on 'radedit:tree', (treeString) ->
 				node.children = []
 		else
 			node.name += character
-	setHtml 'tree', treeHtml node
+	setHtml '_TREE', treeHtml node
 
 
 treeHtml = (node) ->
 	inside = ''
 	if node.children
-		type = 'folder'
+		type = '_FOLDER'
 		if node.children.length
-			mode = 'plus'
+			mode = '_PLUS'
 			for child in node.children
 				inside += treeHtml child if child.children
 			for child in node.children
 				inside += treeHtml child if not child.children
 		else
-			mode = 'empty'
-		expander = "<i class=plus>" + icons[mode] + "</i>"
+			mode = '_EMPTY'
+		expander = "<i class=_PLUS>" + icons[mode] + "</i>"
 	else
 		expander = ''
-		type = 'file'
+		type = '_FILE'
 	icon = "<i class=#{type}>" + icons[type] + "</i>"
 	if node.name
-		return "<div class=#{type}><div class=item>#{expander}#{icon}#{node.name}</div><div class=tree>#{inside}</div></div>"
+		return "<div class=#{type}><div class=_ITEM>#{expander}#{icon}#{node.name}</div><div class=_TREE>#{inside}</div></div>"
 	else
 		return inside
 
 
-delegate 'tree', 'div.item', 'click', (event, element, target) ->
-	icon = firstChild target
-	tree = nextSibling target
-	toggleClass tree, 'on'
+delegate '_TREE', 'div._ITEM', 'click', (event, $element, $target) ->
+	$icon = getFirstChild $target
+	$tree = getNextSibling $target
+	toggleClass $tree, '_ON'
 
 	# When a file is clicked, load it.
-	if hasClass icon, 'file'
-		rel = getText target
+	if hasClass $icon, '_FILE'
+		rel = getText $target
 		while true
-			target = getParent getParent target
-			if hasClass target, 'area'
+			$target = getParent getParent $target
+			if hasClass $target, '_AREA'
 				break
-			rel = (getText previousSibling target) + '/' + rel
+			rel = (getText previousSibling $target) + '/' + rel
 		fetchFile rel
 
 	# Grandchildren only exist in non-empty folders.
-	else if firstChild firstChild icon
-		sign = if hasClass tree, 'on' then 'minus' else 'plus'
-		setHtml icon, icons[sign]
+	else if getFirstChild getFirstChild $icon
+		sign = if hasClass $tree, '_ON' then '_MINUS' else '_PLUS'
+		setHtml $icon, icons[sign]
