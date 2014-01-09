@@ -1,7 +1,7 @@
 {
   "name": "radedit",
   "description": "Rapid App Development framework with collaborative editor.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "author": {
     "name": "Sam Eubank",
     "email": "sameubank@gmail.com"
@@ -57,6 +57,6 @@
   "engines": {
     "node": "*"
   },
-  "readme": "",
-  "readmeFilename": "Readme.md"
+  "readmeFilename": "README.md",
+  "homepage": "http://radedit.com"
 }
