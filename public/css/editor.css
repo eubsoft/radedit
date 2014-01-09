@@ -5,12 +5,12 @@
 
 html {
 	height: 100%;
-	background: #111;
+	background: #000;
 	font: normal 12px Arial;
 	overflow: hidden;
 }
 
-#menu {
+#_NAV {
 	position: absolute;
 	left: 0;
 	top: 0;
@@ -20,7 +20,7 @@ html {
 	border-bottom: 0.1em solid #555;
 }
 
-#menu, #tree {
+#_NAV, #_MENU, #_TREE {
 	user-select: none; 
 	-o-user-select: none; 
 	-moz-user-select: none; 
@@ -28,7 +28,7 @@ html {
 	-webkit-user-select: none; 
 }
 
-#content {
+#_CONTENT, #_LOADING {
 	position: absolute;
 	left: 0;
 	top: 2.4em;
@@ -36,32 +36,47 @@ html {
 	bottom: 0;
 }
 
-.menu {
+#_LOADING {
+	background: #000;
+	opacity: 0.9;
+	z-index: 2;
+	text-align: center;
+	vertical-align: middle;
+}
+
+#_LOADING>span {
+	display: inline-block;
+	color: #fff;
+	font-size: 2em;
+	margin-top: 2em;
+}
+
+._NAV {
 	float: left;
 	padding: 0.2em 0.4em;
 	cursor: pointer;
 }
 
-.menu.on, .menu.error {
+._NAV._ON, ._NAV._ERROR {
 	border-top-left-radius: 0.5em;
 	border-top-right-radius: 0.5em;
 }
 
-#menu svg {
+#_NAV svg {
 	margin-top: 0.1em;
 	width: 1.7em;
 	height: 1.7em;
 }
 
-.menu.on {
+._NAV._ON {
 	background: #555;
 }
 
-#editor {
+#_EDITOR {
 	height: 100%;
 }
 
-.area, .CodeMirror {
+._AREA, .CodeMirror {
 	position: absolute;
 	top: 0;
 	bottom: 0;
@@ -71,14 +86,8 @@ html {
 	color: #ddd;
 }
 
-#tree {
-	padding: 0.5em;
-	right: auto;
-	min-width: 25em;
-}
-
-.area {
-	z-index: 2;
+._AREA {
+	z-index: 3;
 	display: none;
 	overflow: auto;
 	top: -0.1em;
@@ -86,85 +95,102 @@ html {
 	background: #111;
 }
 
-.on {
+#_MENU {
+	padding: 1em;
+	right: auto;
+	bottom: auto;
+	min-width: 24em;
+}
+
+#_MENU span {
+	margin: 0 0 0 0.5em;
+}
+
+#_TREE {
+	padding: 0.5em;
+	right: auto;
+	min-width: 25em;
+}
+
+._ON {
 	display: block !important;
 }
 
-.disabled {
+._DISABLED {
 	opacity: 0.2;
 }
 
-.hidden {
-	display: none;
+._HIDDEN {
+	display: none !important;
 }
 
-div.item {
+div._ITEM {
 	white-space: nowrap;
 	padding: 0.1em 0;
 }
 
-div.file, div.tree {
+div._FILE, div._TREE {
 	padding-left: 1.6em;
 }
 
-div.item:hover {
+div._ITEM:hover {
 	background: #222;
 	cursor: pointer;
 }
 
-i.plus, i.folder, i.file {
+i._PLUS, i._FOLDER, i._FILE {
 	display: inline-block;
 	width: 1.6em;
 	height: 1.6em;
 	vertical-align: middle;
 }
 
-i.folder, i.file {
+i._FOLDER, i._FILE {
 	margin-right: 0.3em;
 }
 
-div.tree {
+div._TREE {
 	display: none;
 }
 
-#console {
+#_CONSOLE {
 	background: #000;
 	padding: 0.1em 0.3em;
 }
 
-#console>pre {
+#_CONSOLE>pre {
 	margin: 0;
 }
 
-#console>pre a {
+#_CONSOLE>pre a {
 	text-decoration: none;
 	cursor: pointer;
 }
 
-#console>pre.log { color: #bbb; }
-#console>pre.trace { color: #0ee; }
-#console>pre.debug {color: #e0e; }
-#console>pre.info { color: #0b0; }
-#console>pre.warn { color: #ee0; }
-#console>pre.error { color: #e00; }
+#_CONSOLE>pre._LOG { color: #bbb; }
+#_CONSOLE>pre._TRACE { color: #0ee; }
+#_CONSOLE>pre._DEBUG {color: #e0e; }
+#_CONSOLE>pre._INFO { color: #0b0; }
+#_CONSOLE>pre._WARN { color: #ee0; }
+#_CONSOLE>pre._ERROR { color: #e00; }
 
-#console>pre.log a { border-bottom: solid 0.1em #444; }
-#console>pre.trace a { border-bottom: solid 0.1em #066; }
-#console>pre.debug a { border-bottom: solid 0.1em #606; }
-#console>pre.info a { border-bottom: solid 0.1em #060; }
-#console>pre.warn a { border-bottom: solid 0.1em #660; }
-#console>pre.error a { border-bottom: solid 0.1em #600; }
+#_CONSOLE>pre._LOG a { border-bottom: solid 0.1em #444; }
+#_CONSOLE>pre._TRACE a { border-bottom: solid 0.1em #066; }
+#_CONSOLE>pre._DEBUG a { border-bottom: solid 0.1em #606; }
+#_CONSOLE>pre._INFO a { border-bottom: solid 0.1em #060; }
+#_CONSOLE>pre._WARN a { border-bottom: solid 0.1em #660; }
+#_CONSOLE>pre._ERROR a { border-bottom: solid 0.1em #600; }
 
-#console>pre.log a:hover { color: #ccc; }
-#console>pre.trace a:hover { color: #0ff; }
-#console>pre.debug a:hover { color: #f0f; }
-#console>pre.info a:hover { color: #0c0; }
-#console>pre.warn a:hover { color: #ff0; }
-#console>pre.error a:hover { color: #f00; }
+#_CONSOLE>pre._LOG a:hover { color: #ccc; }
+#_CONSOLE>pre._TRACE a:hover { color: #0ff; }
+#_CONSOLE>pre._DEBUG a:hover { color: #f0f; }
+#_CONSOLE>pre._INFO a:hover { color: #0c0; }
+#_CONSOLE>pre._WARN a:hover { color: #ff0; }
+#_CONSOLE>pre._ERROR a:hover { color: #f00; }
 
-#consoleButton.error { background: #900; }
+#_CONSOLE__BUTTON._ERROR { background: #900; }
 
-#searchBox {
+#_SEARCH_BOX {
 	position: absolute;
 	left: 13em;
 	right: 7.5em;
@@ -173,19 +199,19 @@ div.tree {
 	margin: 0.2em 0;
 }
 
-#searchBox svg {
+#_SEARCH_BOX svg {
 	position: absolute;
 	z-index: 2;
 	left: 0.1em;
 }
 
-#searchBox div {
+#_SEARCH_BOX div {
 	position: relative;
 	width: 100%;
 	height: 100%;
 }
 
-#searchBox input {
+#_SEARCH_BOX input {
 	width: 100%;
 	height: 100%;
 	border-radius: 1em;
@@ -197,45 +223,46 @@ div.tree {
 	/* transition: border 0.2s, width 0.2s, background 0.2s, color 0.2s; */
 }
 
-#searchBox input.focus, #search>div {
+#_SEARCH_BOX input._FOCUS, #_SEARCH_RESULTS>div {
 	background: #eee;
 	color: #000;
 	border: 0.1em solid #fff;
 }
 
-#search {
+#_SEARCH_RESULTS {
 	position: absolute;
 	z-index: 3;
 	top: -0.2em;
-	left: 14em;
-	right: 5.4em;
+	left: 0;
+	right: 0;
 	max-height: 90%;
 	overflow: auto;
 }
 
-#search>div {
+#_SEARCH_RESULTS>div {
 	border-top: 0;
 	border-bottom: 0.1em solid #f8f8f8;
 	cursor: pointer;
 	padding: 0.3em 1em;
-	color: #333;
+	color: #666;
 	overflow: hidden;
+	font-size: 1.2em;
 }
 
-#search>div>b {
+#_SEARCH_RESULTS>div>b {
 	color: #000;
 }
 
-#search>div>i {
+#_SEARCH_RESULTS>div>i {
 	color: #666;
 	font-style: normal;
 }
 
-#search>div:hover {
+#_SEARCH_RESULTS>div:hover {
 	background: #fff;
 }
 
-#avatar {
+#_AVATAR {
 	float: right;
 	width: 2em;
 	height: 2em;

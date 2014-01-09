@@ -1,9 +1,9 @@
 var body = document.body;
 
-
 /**
  * Get a DOM element by its ID (if the argument is an ID).
- * If you pass in a DOM element, it just returns it, so this can be used to ensure that you're using a DOM element.
+ * If you pass in a DOM element, it just returns it.
+ * This can be used to ensure that you have a DOM element.
  */
 var getElement = function(id, fromDocument) {
     // If the argument is not a string, just assume it's already an element reference, and return it.
@@ -90,7 +90,7 @@ var addElement = function(parentElement, tagIdentifier, beforeSibling) {
  * Create a DOM element, and prepend it to a parent element.
  */
 var prependElement = function(parentElement, tagIdentifier) {
-	var beforeSibling = firstChild(parentElement);
+	var beforeSibling = getFirstChild(parentElement);
 	return addElement(parentElement, tagIdentifier, beforeSibling);
 };
 
@@ -228,7 +228,7 @@ var setClass = function(element, text) {
 /**
  * Get a DOM element's firstChild if the element can be found.
  */
-var firstChild = function(element) {
+var getFirstChild = function(element) {
     // Ensure that we have an element, not just an ID.
     if (element = getElement(element)) {
         return element.firstChild;
@@ -246,29 +246,54 @@ var previousSibling = function(element) {
 };
 
 /**
- * Get a DOM element's previousSibling if the element can be found.
+ * Get a DOM element's nextSibling if the element can be found.
  */
-function nextSibling(element) {
+function getNextSibling(element) {
     // Ensure that we have an element, not just an ID.
     if (element = getElement(element)) {
-        return element.nextSibling;
+		return element.nextSibling;
     }
 }
 
 /**
- * Naive class detection.
+ * Case-sensitive class detection.
  */
 function hasClass(element, className) {
-    return containsString(getClass(element), className);
+	var pattern = new RegExp('(^|\\s)' + className + '(\\s|$)');
+	return pattern.test(getClass(element));
+}
+
+/**
+ * Add a class to a given element.
+ */
+function addClass(element, className) {
+    if (element = getElement(element)) {
+    	element.className += ' ' + className;
+    }
+}
+
+/**
+ * Remove a class from a given element.
+ */
+function removeClass(element, className) {
+	if (element = getElement(element)) {
+    	var tokens = getClass(element).split(/\s/);
+    	var ok = [];
+    	forEach(tokens, function (token) {
+    		if (token != className) {
+    			ok.push(token);
+    		}
+    	});
+	    element.className = ok.join(' ');
+    }
 }
 
 /**
  * Turn a class on or off on a given element.
  */
 function flipClass(element, className, flipOn) {
-    var pattern = new RegExp('(^| )' + className, 'g');
-    element = getElement(element);
-    element.className = element.className.replace(pattern, '') + (flipOn ? ' ' + className : '');
+    var method = flipOn ? addClass : removeClass;
+    method(element, className);
 }
 
 /**

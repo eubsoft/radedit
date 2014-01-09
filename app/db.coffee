@@ -1,4 +1,8 @@
 orm = require 'orm'
+radedit = require 'radedit'
+config = radedit.config
+log = radedit.log
+
 global.db  = orm.connect config.db
 if not db.models
 	db.models = {}
@@ -25,6 +29,9 @@ db.connect (err) ->
 # Overwrite the ORM's "define" to emit events.
 define = db.define
 db.define = (modelName) ->
+	log.trace define
+	log.trace db
+	log.trace arguments
 	define.apply db, arguments
 	# Signal that the model has been defined.
 	db.emit 'defined:' + modelName

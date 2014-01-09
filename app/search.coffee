@@ -1,3 +1,8 @@
+radedit = require 'radedit'
+log = radedit.log
+
+# TODO: Save the search index to db (not just in-memory).
+
 global.search =
 	update: ->
 		args = arguments
@@ -32,7 +37,7 @@ newFile = (rel, content) ->
 
 
 update = (rel, content) ->
-	if !/^text/.test loader.getMime rel
+	if !/^text/.test radedit.loader.getMime rel
 		return
 
 	file = files[rel]
@@ -73,7 +78,7 @@ tokenize = (content, counts, importance, multiplier) ->
 	counts = counts or {}
 	importance = importance or 1
 	multiplier = multiplier or 1
-	tokens = content.split /[^a-z_0-9]+/i
+	tokens = content.split /[^a-z0-9]+/i
 	for token in tokens
 		if token
 			incrementValue counts, token.toUpperCase(), importance
@@ -123,8 +128,8 @@ matchesDescending = (a, b) ->
 	b.matches - a.matches
 
 
-io.connect (socket) ->
-	
+radedit.io.connect (socket) ->
+
 	socket.on 'radedit:search', (query) ->
 		find query, (results) ->
 			socket.emit 'radedit:searched', results

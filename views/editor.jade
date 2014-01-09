@@ -1,20 +1,23 @@
-doctype 5
+doctype html
 html
 	head
 		title Code
-		link(rel="stylesheet", href="/radedit.css")
-		link(rel="shortcut icon", href="/favicon.ico")
+		link(rel="stylesheet", href="/radedit.#{vTag}.css")
+		link(rel="shortcut icon", href="/favicon.#{vTag}.ico")
 		meta(
 			name="viewport",
 			content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no")
 		
 	body
-		#layout
-			#menu
-			#content
-				#tree.area
-				#console.area
-				#search.hidden
-				#editor
+		#_NAV
+		#_CONTENT
+			#_MENU._AREA
+				label
+					input#_FULL_SOURCE(type="checkbox")
+					span Full source mode <i>(disables minification)</i>
+			#_TREE._AREA
+			#_CONSOLE._AREA
+			#_SEARCH_RESULTS._HIDDEN
+		#_LOADING: span Loading...
 
-		script(src="/radedit.js")
+		script(src="/radedit.#{vTag}.js")

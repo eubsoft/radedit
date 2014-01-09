@@ -3,7 +3,7 @@ function ajax(url, data, onSuccess, onFailure, evalJson) {
 	if (window.XMLHttpRequest) {
 		request = new XMLHttpRequest();
 	} else if (window.ActiveXObject) {
-		request = new ActiveXObject("Microsoft.XMLHTTP");
+		request = new ActiveXObject('Microsoft.XMLHTTP');
 	} else {
 		return false;
 	}
