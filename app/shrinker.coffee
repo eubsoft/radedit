@@ -22,6 +22,11 @@ module.exports =
 		return replacement
 
 	shrink: (asset) ->
+		
+		# Don't shrink non-textual files.
+		if asset.rel and not /^text/.test radedit.loader.getMime asset.rel or ''
+			return
+
 		minified = asset.minified
 		if minified
 			matches = minified.match /[^A-Z0-9](_[A-Z][_A-Z0-9]+)/g

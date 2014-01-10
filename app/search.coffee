@@ -3,12 +3,43 @@ log = radedit.log
 
 # TODO: Save the search index to db (not just in-memory).
 
-global.search =
-	update: ->
-		args = arguments
-		setTimeout(->
-			update.apply search, args
-		, 100)
+search =
+module.exports =
+
+	update: (rel, content) ->
+	
+		file = files[rel]
+		if file
+			# TODO: Unload file from index before reloading it.
+		else
+			file = files[rel] = newFile rel, '' + content
+	
+		filename = rel.replace /(^.*\/|\..*$)/g, ''
+	
+		tokens = tokenize rel, null, 0.5, 1.5
+		tokens = tokenize filename, tokens, 10
+		if /^text/.test radedit.loader.getMime filename
+			tokens = tokenize content, tokens
+	
+		for own text, count of tokens
+	
+			file.matches += count
+			file.terms.push
+				text: text
+				matches: count
+	
+		file.terms.sort matchesDescending
+	
+		for own text, count of tokens
+	
+			term = terms[text]
+			if not term
+				term = terms[text] = newTerm text
+			term.matches += count
+			term.files.push
+				rel: rel
+				frequency: count / file.matches
+			term.files.sort frequencyDescending
 
 terms = {}
 termCount = 0
@@ -36,41 +67,6 @@ newFile = (rel, content) ->
 		terms: []
 
 
-update = (rel, content) ->
-	if !/^text/.test radedit.loader.getMime rel
-		return
-
-	file = files[rel]
-	if file
-		# TODO: Unload file from index before reloading it.
-	else
-		file = files[rel] = newFile rel, '' + content
-
-	filename = rel.replace /(^.*\/|\..*$)/g, ''
-
-	tokens = tokenize content
-	tokens = tokenize rel, tokens, 0.5, 1.5
-	tokens = tokenize filename, tokens, 10
-
-	for own text, count of tokens
-
-		file.matches += count
-		file.terms.push
-			text: text
-			matches: count
-
-	file.terms.sort matchesDescending
-
-	for own text, count of tokens
-
-		term = terms[text]
-		if not term
-			term = terms[text] = newTerm text
-		term.matches += count
-		term.files.push
-			rel: rel
-			frequency: count / file.matches
-		term.files.sort frequencyDescending
 
 
 tokenize = (content, counts, importance, multiplier) ->

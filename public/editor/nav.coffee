@@ -49,6 +49,6 @@ showConnectionStatus = (status) ->
 
 # TODO: User preferences.
 $avatar = addElement $nav, 'img#_AVATAR'
-$avatar.src = 'http://gravatar.com/avatar/4a4c0726ea748003742f5d5dbd1cbad1?s=40'
+#$avatar.src = 'http://gravatar.com/avatar/4a4c0726ea748003742f5d5dbd1cbad1?s=40'
 
 enableSaveButton false

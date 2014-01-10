@@ -12,6 +12,7 @@ config = radedit.config
 appPath = radedit.appPath
 io = radedit.io
 log = radedit.log
+search = radedit.search
 
 APP_RESTART_DELAY = 10
 CLIENT_REFRESH_DELAY = 50
@@ -20,15 +21,42 @@ DIR_WALK_INTERVAL = 1000
 
 loader =
 module.exports =
+
+	waitingCount: 0
+	loaded: false
+
 	tree: {}
 	cache: {}
 	views: {}
 	public: {}
-	isDevMode: true
-	shouldMinify: true
+
 	isWindows: /\bwin/i.test process.platform
 	startTime: new Date
 	vTag: 0
+
+	mimes:
+		coffee: 'text/coffeescript'
+		css: 'text/css'
+		html: 'text/html'
+		js: 'text/javascript'
+		jade: 'text/jade'
+		json: 'text/json'
+		md: 'text/markdown'
+		sql: 'text/sql'
+		txt: 'text/plain'
+		xml: 'text/xml'
+		png: 'image/png'
+		jpg: 'image/jpg'
+		gif: 'image/gif'
+		ico: 'image/x-icon'
+
+	queue: []
+
+	onReady: (callback) ->
+		if loader.waitingCount
+			loader.queue.push callback
+		else
+			process.nextTick callback
 
 	updateVTag: ->
 		chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
@@ -39,22 +67,6 @@ module.exports =
 			number = Math.floor number / radix - 0.999
 			vTag = chars[number % radix] + vTag
 		loader.vTag = vTag
-
-mime =
-	coffee: 'text/coffeescript'
-	css: 'text/css'
-	html: 'text/html'
-	js: 'text/javascript'
-	jade: 'text/jade'
-	json: 'text/json'
-	md: 'text/markdown'
-	sql: 'text/sql'
-	txt: 'text/plain'
-	xml: 'text/xml'
-	png: 'image/png'
-	jpg: 'image/jpg'
-	gif: 'image/gif'
-	ico: 'image/x-icon'
 
 
 getRel = (path) ->
@@ -70,7 +82,7 @@ getExtension = (file) ->
 
 loader.getMime =
 getMime = (path) ->
-	return mime[getExtension path]
+	return loader.mimes[getExtension path]
 
 
 
@@ -113,7 +125,7 @@ radeditPublic =
 		"editor/icons.coffee"
 		"editor/key_bindings.coffee"
 		"editor/nav.coffee"
-		"editor/refresh.coffee"
+		"editor/socket.coffee"
 		"editor/menu.coffee"
 		"editor/tree.coffee"
 		"editor/console.coffee"
@@ -143,12 +155,15 @@ loadFiles = (path) ->
 	path = path or appPath
 	walk path, checkFile, checkDir
 	buildTree()
-	setTimeout(->
-		loadFiles path
-	, DIR_WALK_INTERVAL)
+
+	# Check for changes every so often.
+	loader.onReady ->
+		setTimeout(->
+			loadFiles path
+		, DIR_WALK_INTERVAL)
 
 # Load all files
-setImmediate ->
+process.nextTick ->
 	loadFiles moduleRoot
 	loadFiles appPath
 
@@ -230,7 +245,13 @@ lintFile = (path, content, callback) ->
 	if typeof content is 'string'
 		doLinting null, content
 	else
-		fs.readFile path, doLinting
+		wait()
+		fs.readFile path, (err, content) ->
+			if err
+				unwait()
+				return log.warn "Failed to read path: #{path}"
+			doLinting err, content
+			unwait()
 
 
 loader.loadFile =
@@ -252,8 +273,7 @@ loadFile = (path, reloadContent) ->
 			href = href.replace /\.coffee$/, '.js'
 			href = '/' + href
 			asset = createPublicAsset href, content
-			routePublic href, asset
-			search.update rel, content
+			routePublic href, rel
 
 	# Load jade views for the server.
 	else if getExtension(rel) is 'jade'
@@ -270,10 +290,12 @@ loadFile = (path, reloadContent) ->
 						minCode = view.minified.replace /(^|\n)(\s+include\s+\S+)/g, '$1$2.min'
 						view.min = jade.compile minCode, {filename: minPath}
 					loader.views[name] = view
-					radedit.shrinker.shrink view
+					loader.onReady ->
+						radedit.shrinker.shrink view
 					refreshClients 'views'
 					if shouldUpdate
-						search.update rel, content
+						loader.onReady ->
+							search.update rel, content
 
 		name = rel.replace /\.jade$/, ''
 		name = name.replace modulesPattern, ''
@@ -303,24 +325,42 @@ loadFile = (path, reloadContent) ->
 					loadModule path
 
 		lintFile path, reloadContent, (content) ->
-			search.update rel, content
+			loader.onReady ->
+				search.update rel, content
 
+wait = ->
+	loader.waitingCount++
+
+unwait = ->
+	loader.waitingCount--
+	if not loader.waitingCount
+		loader.queue.forEach process.nextTick
+		loader.queue = []
 
 # Recursively walk a directory, calling functions on each file and directory.
 walk = (dir, fileCallback, dirCallback) ->
+	wait()
 	fs.readdir dir, (err, files) ->
-		dirCallback dir, files if dirCallback
 		if err
-			return
+			unwait()
+			return log.warn "Failed to read directory: #{dir}"
+		if dirCallback
+			dirCallback dir, files
 		files.forEach (filename) ->
 			if not ignorePattern.test filename
 				path = dir + '/' + filename
+				wait()
 				fs.stat path, (err, stat) ->
+					if err
+						unwait()
+						return log.warn "Failed to stat path: #{path}"
 					isDirectory = stat.isDirectory()
 					if isDirectory
 						walk path, fileCallback, dirCallback
-					else
-						fileCallback path, stat if fileCallback
+					else if fileCallback
+						fileCallback path, stat
+					unwait()
+		unwait()
 
 
 loader.public =
@@ -341,7 +381,8 @@ createPublicAsset = (rel, content) ->
 		rel: rel
 		content: content
 		minified: minified
-	radedit.shrinker.shrink asset
+	loader.onReady ->
+		radedit.shrinker.shrink asset
 	return asset
 
 
@@ -393,10 +434,11 @@ compilePublic = (group) ->
 
 	asset = createPublicAsset group, code
 	loader.public.assets[group] = asset
-	routePublic group, asset
+	routePublic group, group
 
 
-routePublic = (href, asset) ->
+routePublic = (href, assetKey) ->
+	asset = loader.public.assets[assetKey]
 	type = getMime(href) or 'text/html'
 
 	app.get href, (request, response) ->
