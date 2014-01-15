@@ -1,6 +1,8 @@
 # Time to wait before requesting a missing transform.
 TRANSFORM_SEQUENCE_TIMEOUT = 2500
 
+VERSION_INDEX = 3
+
 # Kindles look better if they're zoomed in a bit.
 if /Silk/.test navigator.userAgent
 	document.body.style.fontSize = '20px'
@@ -43,8 +45,10 @@ saveFile = ->
 	socket.emit 'radedit:save', {rel: currentFile.rel}
 
 startRevising = ->
-	currentFile["EDITS#{currentFile.version}"] =
-	currentFile.edits = []
+	if not currentFile.editNumber
+		currentFile.editNumber = 0
+	if not currentFile.edits
+		currentFile.edits = {}
 	if not currentFile.transforms
 		currentFile.transforms = {}
 
@@ -56,6 +60,7 @@ incrementVersion = ->
 
 socketOn 'radedit:got', (json) ->
 	currentFile = json
+	currentFile.edits = {}
 	startRevising()
 	rel = json.rel
 	code = json.code
@@ -98,27 +103,35 @@ socketOn 'radedit:got', (json) ->
 			removed += change.removed.join '\n'
 			change = change.next
 
-		currentFile.edits.push [
+		edit = [
 			from
 			removed.length
 			text
+			currentFile.version
+			currentFile.editNumber++
 		]
-
-		socketEmit 'radedit:change',
+		data =
 			rel: rel
-			version: currentFile.version
-			edits: currentFile.edits
-		, true
+			edit: edit
+
+		socketEmit 'radedit:edit', data, true
+		currentFile.edits["e#{data.EID}"] = edit
 
 		enableSaveButton true
 
 
-socketOn 'radedit:changed', (json) ->
+socketOn 'radedit:edited', (json) ->
 
 	if json.rel isnt currentFile.rel
 		return log "Ignoring changes for #{json.rel} because the current file is #{currentFile.rel}."
 
-	currentFile.transforms["TRANSFORM#{json.version}"] = json
+	transform = json.edit
+	version = transform[VERSION_INDEX]
+	currentFile.transforms["v#{version}"] = transform
+
+	# The emission ID is used to identify previous edits.
+	if json.EID
+		transform.EID = json.EID
 
 	integrateTransforms()
 
@@ -127,42 +140,51 @@ socketOn 'radedit:changed', (json) ->
 integrateTransforms = ->
 
 	# Check for the transform that brings the current version to the next.
-	transform = currentFile.transforms["TRANSFORM#{currentFile.version}"]
+	transform = currentFile.transforms["v#{currentFile.version}"]
 
 	# If the next transform exists, integrate it.
 	if transform
+		
 		# Cancel any requests for missing transforms.
 		clearTimeout integrateTransforms.sequenceTimeout
 
-		# If an emission ID exists, the transform came from this client.
+		# If the transform came from this client, remove it from unconfirmed edits.
 		if transform.EID
-			# TODO: Remove this transform from the unconfirmed list.
-
+			delete currentFile.edits["e#{transform.EID}"]
+			
 		# If the emission came from another client, we must apply it.
 		else
-			# Apply the transform's edits in order.
-			for edit in transform.edits
 
-				# Edits are [start, length, text].
-				doc = editor.doc
-				text = edit[2]
-				change =
-					from: edit[0]
-					to: edit[0] + edit[1]
-				pos = peek = 0
-				line = -1
+			# Apply unconfirmed edits before applying the transform.
+			for own key, edit of currentFile.edits
+				applyTransformToEdit edit, transform
 
-				# Convert "from" and "to" boundaries from string position to line and character.
-				for own key, boundary of change
+			# Edits are [start, length, text].
+			doc = editor.doc
+			text = transform[2]
+			change =
+				from: transform[0]
+				to: transform[0] + transform[1]
+			pos = peek = 0
+			line = -1
+
+			# Convert "from" and "to" boundaries from string position to line and character.
+			for own key, boundary of change
+				try
 					while peek <= boundary
 						pos = peek
-						peek += doc.getLine(++line).length + 1
-					change[key] = {line: line, ch: boundary - pos}
-		
-				# TODO: If unconfirmed edits exist, apply offsets.
-		
-				change.replacement = text
-				doc.replaceRange change.replacement, change.from, change.to, 'io'
+						string = doc.getLine ++line
+						peek += string.length + 1
+				catch e
+					log e
+				change[key] = {line: line, ch: boundary - pos}
+
+			change.replacement = text
+			doc.replaceRange change.replacement, change.from, change.to, 'io'
+
+			# Transform unconfirmed edits to be relative to the new version.
+			for own key, edit of currentFile.edits
+				applyTransformToEdit transform, edit
 
 		# Each transform in the sequence brings us one version forward.
 		incrementVersion()
@@ -180,7 +202,7 @@ integrateTransforms = ->
 				hasGapInSequence = true
 			# Past transforms have already been integrated, so they can be deleted.
 			if transform.version < currentFile.version
-				delete currentFile.transforms["TRANSFORM#{currentFile.version}"]
+				delete currentFile.transforms["v#{currentFile.version}"]
 
 		# A gap indicates a missing transform that we may need to request.
 		if hasGapInSequence
@@ -192,6 +214,47 @@ integrateTransforms = ->
 				# TODO: Request the missing transform.
 			, TRANSFORM_SEQUENCE_TIMEOUT)
 
+applyTransformToEdit = (transform, edit) ->
+	log "Applying transform #{JSON.stringify(transform)} to edit #{JSON.stringify(edit)}"
+	start = transform[0]
+	deleted = transform[1]
+	end = start + deleted
+	inserted = transform[2].length
+	# If the transform started left of the edit, adjust.
+	if start <= edit[0]
+		# If the transform finished left of the edit, shift the edit.
+		if end <= edit[0]
+			edit[0] += inserted - deleted
+		# If the transform encloses the edit, nullify the edit.
+		else if end >= edit[0] + edit[1]
+			edit[1] = 0
+			edit[2] = ''
+		# TODO: What if the transform partially encloses the edit?
+		else
+			log "WARNING: Unhandled transformation (partially enclosed)."
+
+applyEditToTransform = (edit, transform) ->
+	# TODO: Apply the edit.
+
+	# # Apply the transform.
+	# start = transform[0]
+	# deleted = transform[1]
+	# end = start + deleted
+	# inserted = transform[2].length
+
+	# # If the transform started left of the edit, adjust.
+	# if start <= edit[0]
+		# # If the transform finished left of the edit, shift the edit.
+		# if end <= edit[0]
+			# edit[0] += inserted - deleted
+		# # If the transform encloses the edit, nullify the edit.
+		# else if end >= edit[0] + edit[1]
+			# edit[1] = 0
+			# edit[2] = ''
+		# # TODO: What if the transform partially encloses the edit?
+		# else
+			# log.warn "Unhandled transformation (partially enclosed)."
+	
 
 rel = location.hash.substr 1
 fetchFile rel if rel

@@ -8,6 +8,8 @@ loader = radedit.loader
 log = radedit.log
 
 SOCKET_EMIT_DELAY = 0 # Modify for testing latency, but don't commit anything but 0.
+VERSION_INDEX = 3
+EDIT_INDEX = 4
 
 app.get '/radedit', (request, response) ->
 	response.view 'radedit/editor'
@@ -16,6 +18,10 @@ app.get '/radedit', (request, response) ->
 readFile = (rel, callback, emissionId) ->
 	path = appPath + '/' + rel
 	fs.readFile path, (err, content) ->
+		if err
+			log.warn "Could not open file (#{rel}) for editing. Assuming empty."
+			if not content?
+				content = ''
 		code = ('' + content).replace /\r/g, ''
 		file =
 			version: 0
@@ -35,11 +41,11 @@ writeFile = (rel) ->
 	fs.writeFile path, file.code
 
 
-
 io.connect (socket) ->
-	
-	# Track the number of edits that have been incorporated.
-	socket.editCounts = {}
+
+	socket.currentFile = null
+	socket.nextEdit = {}
+	socket.edits = {}
 
 	closeCurrentFile = ->
 		file = socket.currentFile
@@ -47,11 +53,14 @@ io.connect (socket) ->
 			delete file.clients[socket.id]
 
 	sendFile = (file, emissionId) ->
-		file.clients[socket.id] = socket
+		rel = file.rel
 		socket.currentFile = file
+		socket.nextEdit[rel] = 0
+		socket.edits[rel] = {}
+		file.clients[socket.id] = socket
 		socket.emit 'radedit:got',
 			EID: emissionId
-			rel: file.rel
+			rel: rel
 			code: file.code
 			version: file.version
 			canSave: (file.code isnt file.savedCode) 
@@ -70,89 +79,94 @@ io.connect (socket) ->
 		if socket.currentFile isnt file
 			closeCurrentFile()
 
-	# Incorporate a new change from a client.
-	socket.on 'radedit:change', (json) ->
+	# Incorporate a new edit from a client.
+	socket.on 'radedit:edit', (json) ->
 		EID = json.EID # Emission ID for relating the response to the request.
 		rel = json.rel # Relative file path.
-		edits = json.edits # Array of CodeMirror edits.
-		version = json.version # Version to which edits are being applied.
+		edit = json.edit # CodeMirror change.
 
 		# The client retrieved the file before editing, so it should be in cache.
 		file = loader.cache[rel]
 		if not file
 			return log.error "Received change for non-existent file: #{rel}"
 
-		# Get the number of edits that this client has already made to this version.
-		versionKey = "#{rel}|v#{version}"
-		editCount = socket.editCounts[versionKey] or 0
-		newEdits = []
+		nextEdit = socket.nextEdit[rel]
+		editNumber = edit[EDIT_INDEX]
 
-		# Apply any new edits.
-		for edit, index in edits
+		# If this edit is present or future, queue it for integration.
+		if editNumber >= nextEdit
+			edit[EDIT_INDEX] = EID
+			socket.edits[rel]["e#{editNumber}"] = edit
+			integrateEdits file
 
-			# Some edits may have already been applied.
-			if index > editCount - 1
 
-				# If the client was working with an old version, we must transform its edits.
-				if json.version < file.version
-					for version in [json.version .. file.version - 1]
+	integrateEdits = (file) ->
+		rel = file.rel
+		edits = socket.edits[rel]
+		nextEdit = socket.nextEdit[rel]
+		edit = edits["e#{nextEdit}"]
 
-						transform = file.transforms["v#{version}"]
-						if transform.author isnt socket.id
-							log.debug "Need to apply transform #{version}: " + JSON.stringify transform
-							# TODO: Apply transform.
-							for t in transform
-								start = t[0]
-								deleted = t[1]
-								end = start + deleted
-								inserted = t[2].length
-								
-								# If the transform started left of the edit, adjust.
-								if start <= edit[0]
-									# If the transform finished left of the edit, shift the edit.
-									if end <= edit[0]
-										edit[0] += inserted - deleted
-									# If the transform encloses the edit, nullify the edit.
-									else if end >= edit[0] + edit[1]
-										edit[1] = 0
-										edit[2] = ''
-									# TODO: What if the transform partially encloses the edit?
+		# If the next edit isn't there yet, we can try later.
+		if not edit
+			return
 
-				code = file.code
-				from = edit[0]
-				to = from + edit[1]
-				text = edit[2]
+		# If the client was working with an old version, we must transform its edits.
+		fromVersion = edit[VERSION_INDEX]
+		if fromVersion < file.version
+			# Iterating from the source version to the last version gets us up to date.
+			for version in [fromVersion .. file.version - 1]
+				applyTransform file, version, edit
 
-				# Record the transformed edit for broadcast.
-				newEdits.push edit
+		# Apply the transformed edit.
+		from = edit[0]
+		to = from + edit[1]
+		text = edit[2]
+		file.code = file.code.substr(0, from) + text + file.code.substr(to)
 
-				# Apply the transformed edit
-				file.code = code.substr(0, from) + text + code.substr(to)
+		# Broadcast changes to the clients that are connected to this file.
+		json =
+			EID: edit[EDIT_INDEX]
+			rel: file.rel
+			edit: edit
 
-		if newEdits.length
-			# Remember how many edits have been applied to this version by this client.
-			socket.editCounts[versionKey] = edits.length
-	
-			sendChangeToClient = (json, client) ->
-				setTimeout(->
-					if client is socket
-						json.EID = EID
-					else
-						delete json.EID
-					client.emit 'radedit:changed', json
-				, SOCKET_EMIT_DELAY * Math.random())
-	
-			# We should only send the edits that haven't been previously applied.
-			json.edits = newEdits
-			# Clients must apply edits to the same version as the server.
-			json.version = file.version
-			# Broadcast changes to the clients that are connected to this file.
-			for own id, client of file.clients
-				sendChangeToClient json, client
-	
-			newEdits.author = socket.id
-			file.transforms["v#{file.version}"] = newEdits
-			file.version++
+		edit[VERSION_INDEX] = file.version
+		edit.length = EDIT_INDEX
+		socketEmit socket, 'radedit:edited', json
+		delete json.EID
+		for own id, client of file.clients
+			if id isnt socket.id
+				socketEmit client, 'radedit:edited', json
+
+		edit[EDIT_INDEX] = socket.id
+		file.transforms["v#{file.version}"] = edit
+		file.version++
+
+		# Call this function again in case another edit is queued.
+		socket.nextEdit[rel]++
+		integrateEdits file
+
+	applyTransform = (file, version, edit) ->
+		transform = file.transforms["v#{version}"]
+		if transform[EDIT_INDEX] isnt socket.id
+
+			# Apply the transform.
+			start = transform[0]
+			deleted = transform[1]
+			end = start + deleted
+			inserted = transform[2].length
+
+			# If the transform started left of the edit, adjust.
+			if start <= edit[0]
+				# If the transform finished left of the edit, shift the edit.
+				if end <= edit[0]
+					edit[0] += inserted - deleted
+				# If the transform encloses the edit, nullify the edit.
+				else if end >= edit[0] + edit[1]
+					edit[1] = 0
+					edit[2] = ''
+				# TODO: What if the transform partially encloses the edit?
+				else
+					log.warn "Unhandled transformation (partially enclosed)."
 
 	socket.on 'radedit:save', (json) ->
 		writeFile json.rel
@@ -167,3 +181,9 @@ io.connect (socket) ->
 		socket.emit 'radedit:log', lines
 
 
+
+socketEmit = (client, tag, json) ->
+	jsonToSend = JSON.parse JSON.stringify json
+	setTimeout(->
+		client.emit tag, jsonToSend
+	, SOCKET_EMIT_DELAY * Math.random())

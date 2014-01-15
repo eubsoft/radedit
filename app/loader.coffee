@@ -16,8 +16,8 @@ search = radedit.search
 
 APP_RESTART_DELAY = 10
 CLIENT_REFRESH_DELAY = 50
-PUBLIC_FILE_COMPILE_DELAY = 5
 DIR_WALK_INTERVAL = 1000
+
 
 loader =
 module.exports =
@@ -366,8 +366,7 @@ walk = (dir, fileCallback, dirCallback) ->
 loader.public =
 	assets: {}
 	parents: {}
-	groups: {}
-	timeouts: {}
+	pending: {}
 
 
 createPublicAsset = (rel, content) ->
@@ -412,11 +411,11 @@ loadPublic = (path, content) ->
 		something = true # TODO: Figure out why removing this fucks things up.
 	if groups = loader.public.parents[rel]
 		groups.forEach (group) ->
-			clearTimeout loader.public.timeouts[group]
-			loader.public.timeouts[group] = setTimeout(->
-				clearTimeout loader.public.timeouts[group]
-				compilePublic group
-			, PUBLIC_FILE_COMPILE_DELAY)
+			loader.public.pending[group] = true
+			loader.onReady ->
+				for own group, isPending of loader.public.pending
+					delete loader.public.pending[group]
+					compilePublic group
 	return asset
 
 compilePublic = (group) ->

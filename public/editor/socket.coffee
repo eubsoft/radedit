@@ -45,14 +45,18 @@ socketEmit = (tag, data, retries, onFailure) ->
 
 		if not data.EID
 			data.EID = socketEmit.EID++
+
+			# Clone the data so that changes can't be made externally.
+			data = JSON.parse JSON.stringify data
+
 			socketEmit['STARTED' + data.EID] = new Date
 			if typeof retries isnt 'number'
 				retries = SOCKET_EMIT_RETRY_COUNT
 
 		if retries
 			socketEmit['TIMEOUT' + data.EID] = setTimeout(->
-				if SOCKET_EMIT_DELAY
-					log "Retrying emission #{data.EID} - #{tag} " + JSON.stringify data
+				#if SOCKET_EMIT_DELAY
+					#log "Retrying emission #{data.EID} - #{tag} " + JSON.stringify data
 				socketEmit tag, data, retries - 1, onFailure
 			, SOCKET_EMIT_RETRY_TIMEOUT)
 		else if onFailure
@@ -74,8 +78,10 @@ socketOn = (tag, callback) ->
 			if started
 				delete socketEmit['STARTED' + emissionId]
 				elapsed = (new Date) - started
-				if SOCKET_EMIT_DELAY
-					log "Emission #{emissionId} completed in #{elapsed} milliseconds."
+				#if SOCKET_EMIT_DELAY
+					#log "Emission #{emissionId} completed in #{elapsed} milliseconds."
 				clearTimeout socketEmit['TIMEOUT' + emissionId]
-		callback data
+				callback data
+		else
+			callback data
 
