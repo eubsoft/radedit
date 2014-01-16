@@ -1,6 +1,7 @@
 # Time to wait before requesting a missing transform.
 TRANSFORM_SEQUENCE_TIMEOUT = 2500
 
+EDITOR_HISTORY_DELAY = 500
 VERSION_INDEX = 3
 
 # Kindles look better if they're zoomed in a bit.
@@ -27,6 +28,7 @@ currentFile = null
 lineNumber = null
 charNumber = null
 files = {}
+
 
 fetchFile = (rel) ->
 	parts = rel.split /:/
@@ -58,7 +60,7 @@ incrementVersion = ->
 	enableSaveButton true
 
 
-socketOn 'radedit:got', (json) ->
+gotFile = (json) ->
 	currentFile = json
 	currentFile.edits = {}
 	startRevising()
@@ -69,9 +71,6 @@ socketOn 'radedit:got', (json) ->
 	extension = rel.replace /^.*\./, ''
 	mode = modes[extension] or 'text'
 
-	location.hash = '#' + rel
-	document.title = "RadEdit: #{rel}"
-
 	$container = $ '_CONTENT'
 	editor = CodeMirror($container,
 		mode: mode
@@ -79,6 +78,7 @@ socketOn 'radedit:got', (json) ->
 		indentWithTabs: true
 		lineNumbers: true
 		autofocus: true
+		showCursorWhenSelecting: true
 		value: code
 	)
 	enableSaveButton json.canSave
@@ -118,6 +118,59 @@ socketOn 'radedit:got', (json) ->
 		currentFile.edits["e#{data.EID}"] = edit
 
 		enableSaveButton true
+
+	editor.on 'scroll', (cm) ->
+		setEditorUrl()
+
+	editor.on 'cursorActivity', ->
+		setEditorUrl()
+
+	document.title = "RadEdit: #{rel}"
+	setEditorUrl true
+
+
+scrollEditorTo = (x, y) ->
+	editor.scrollTo x, y
+	editor.setSize()
+
+getLineAndCh = (param) ->
+	if param
+		param = param.split(',')
+		param =
+			line: param[0]
+			ch: param[1]
+
+setEditorSelection = (anchor, head) ->
+	anchor = getLineAndCh anchor
+	head = getLineAndCh head
+	#editor.setSelection anchor, head
+
+
+setEditorUrl = (isNewFile) ->
+	clearTimeout setEditorUrl.T
+	setEditorUrl.T = setTimeout ->
+		clearTimeout setEditorUrl.T
+		doc = editor.doc
+		sel = doc.sel or {}
+		anchor = sel.anchor
+		head = sel.head
+		href = location.protocol + '//' + location.host
+		href += '/radedit?rel=' + currentFile.rel
+		href += '&x=' + doc.scrollLeft
+		href += '&y=' + doc.scrollTop
+		if anchor
+			href += '&a=' + "#{anchor.line},#{anchor.ch}"
+		if head
+			href += '&h=' + "#{head.line},#{head.ch}"
+		if href isnt location.href
+			if isNewFile
+				pushHistory href
+			else
+				replaceHistory href
+	, EDITOR_HISTORY_DELAY
+
+
+socketOn 'radedit:got', gotFile
 
 
 socketOn 'radedit:edited', (json) ->
@@ -214,8 +267,8 @@ integrateTransforms = ->
 				# TODO: Request the missing transform.
 			, TRANSFORM_SEQUENCE_TIMEOUT)
 
+
 applyTransformToEdit = (transform, edit) ->
-	log "Applying transform #{JSON.stringify(transform)} to edit #{JSON.stringify(edit)}"
 	start = transform[0]
 	deleted = transform[1]
 	end = start + deleted
@@ -233,31 +286,13 @@ applyTransformToEdit = (transform, edit) ->
 		else
 			log "WARNING: Unhandled transformation (partially enclosed)."
 
-applyEditToTransform = (edit, transform) ->
-	# TODO: Apply the edit.
 
-	# # Apply the transform.
-	# start = transform[0]
-	# deleted = transform[1]
-	# end = start + deleted
-	# inserted = transform[2].length
-
-	# # If the transform started left of the edit, adjust.
-	# if start <= edit[0]
-		# # If the transform finished left of the edit, shift the edit.
-		# if end <= edit[0]
-			# edit[0] += inserted - deleted
-		# # If the transform encloses the edit, nullify the edit.
-		# else if end >= edit[0] + edit[1]
-			# edit[1] = 0
-			# edit[2] = ''
-		# # TODO: What if the transform partially encloses the edit?
-		# else
-			# log.warn "Unhandled transformation (partially enclosed)."
-	
-
-rel = location.hash.substr 1
-fetchFile rel if rel
+file = window.file
+if file
+	query = getQueryParams()
+	gotFile file
+	scrollEditorTo query.x, query.y
+	setEditorSelection query.a, query.h
 
 # Hide the menu when the editor is clicked.
 delegate document, '.CodeMirror', 'mousedown', hideMenuArea

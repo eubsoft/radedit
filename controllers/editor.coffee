@@ -12,8 +12,24 @@ VERSION_INDEX = 3
 EDIT_INDEX = 4
 
 app.get '/radedit', (request, response) ->
-	response.view 'radedit/editor'
+	rel = request.query.rel
+	respond = (file) ->
+		response.view 'radedit/editor', {file: file}
+	if rel?
+		readFile rel, (file) ->
+			v = file.version
+			r = stringify rel
+			c = stringify file.code
+			s = file.code isnt file.savedCode
+			respond "{version:#{v},rel:'#{r}',code:'#{c}',canSave:#{s}}"
+	else
+		respond null
 
+stringify = (string) ->
+	string = string.replace /\\/g, "\\\\"
+	string = string.replace /'/g, "\\'"
+	string = string.replace /\n/g, "\\n"
+	return string
 
 readFile = (rel, callback, emissionId) ->
 	path = appPath + '/' + rel
@@ -63,7 +79,7 @@ io.connect (socket) ->
 			rel: rel
 			code: file.code
 			version: file.version
-			canSave: (file.code isnt file.savedCode) 
+			canSave: (file.code isnt file.savedCode)
 	
 	socket.on 'disconnect', ->
 		closeCurrentFile()
