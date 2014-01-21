@@ -1,3 +1,8 @@
+###
+The loader module recursively loads directory contents.
+###
+
+# External dependencies.
 fs = require 'fs'
 jade = require 'jade'
 events = require 'events'
@@ -6,6 +11,7 @@ uglify = require 'uglify-js'
 clean = require 'clean-css'
 clean = new clean
 
+# RadEdit dependencies.
 radedit = require 'radedit'
 app = radedit.app
 config = radedit.config
@@ -19,8 +25,7 @@ CLIENT_REFRESH_DELAY = 50
 DIR_WALK_INTERVAL = 1000
 
 
-loader =
-module.exports =
+class Loader
 
 	waitingCount: 0
 	loaded: false
@@ -53,8 +58,8 @@ module.exports =
 	queue: []
 
 	onReady: (callback) ->
-		if loader.waitingCount
-			loader.queue.push callback
+		if @waitingCount
+			@queue.push callback
 		else
 			process.nextTick callback
 
@@ -66,7 +71,18 @@ module.exports =
 		while number >= radix
 			number = Math.floor number / radix - 0.999
 			vTag = chars[number % radix] + vTag
-		loader.vTag = vTag
+		@vTag = vTag
+
+	loadFile: (path, content) ->	
+		if @loaded
+			log "Updated: #{path}"
+			@updateVTag()
+		processFile = @processFile
+		lintFile path, content, (content) ->
+			processFile path, content
+
+module.exports =
+loader = new Loader
 
 
 getRel = (path) ->
@@ -205,7 +221,7 @@ checkFile = (path, stat) ->
 
 	if recentlyModified or not previousTime
 		modifiedTimes[path] = modifiedTime
-		loadFile path, previousTime
+		loader.loadFile path, previousTime
 
 
 checkDir = (path, files) ->
@@ -247,66 +263,56 @@ lintFile = (path, content, callback) ->
 	if typeof content is 'string'
 		doLinting null, content
 	else
-		wait()
+		incrementWaitingCount()
 		fs.readFile path, (err, content) ->
 			if err
-				unwait()
+				decrementWaitingCount()
 				return log.warn "Failed to read path: #{path}"
 			doLinting err, content
-			unwait()
+			decrementWaitingCount()
 
 
-loader.loadFile =
-loadFile = (path, reloadContent) ->
+loader.processFile =
+processFile = (path, content) ->
 	rel = getRel path
 
-	if reloadContent
-		log "Updated: #{path}"
-		loader.updateVTag()
-
-	# Load public files.
 	if publicPattern.test rel
-		lintFile path, reloadContent, (content) ->
-			content = loadPublic path, content
-			type = getMime(path) or 'text/html'
-			href = rel.replace modulesPattern, ''
-			href = href.replace publicPattern, '$1'
-			href = href.replace /\.html$/, ''
-			href = href.replace /\.coffee$/, '.js'
-			href = '/' + href
-			asset = createPublicAsset href, content
-			routePublic href, rel
+		content = loadPublic path, content
+		type = getMime(path) or 'text/html'
+		href = rel.replace modulesPattern, ''
+		href = href.replace publicPattern, '$1'
+		href = href.replace /\.html$/, ''
+		href = href.replace /\.coffee$/, '.js'
+		href = '/' + href
+		asset = createPublicAsset href, content
+		routePublic href, rel
 
 	# Load jade views for the server.
 	else if getExtension(rel) is 'jade'
 		# Load dependent views
-		loadView = (name, path, shouldUpdate) ->
-			if path
-				lintFile path, reloadContent, (content) ->
-					content = '' + content
-					view = jade.compile content, {filename: path}
-					view.path = path
-					view.minified = content
-					view.afterShrunk = ->
-						minPath = path.replace /\.jade$/, '.min.jade'
-						minCode = view.minified.replace /(^|\n)(\s+include\s+\S+)/g, '$1$2.min'
-						view.min = jade.compile minCode, {filename: minPath}
-					loader.views[name] = view
-					loader.onReady ->
-						radedit.shrinker.shrink view
-					refreshClients 'views'
-					if shouldUpdate
-						loader.onReady ->
-							search.update rel, content
+		loadView = (name, path, oldView) ->
+			code = if oldView then oldView.code else '' + content
+			view = jade.compile code, {filename: path}
+			view.path = path
+			view.code = code
+			view.minified = code
+			view.afterShrunk = ->
+				minPath = path.replace /\.jade$/, '.min.jade'
+				minCode = view.minified.replace /(^|\n)(\s+include\s+\S+)/g, '$1$2.min'
+				view.min = jade.compile minCode, {filename: minPath}
+			loader.views[name] = view
+			loader.onReady ->
+				radedit.shrinker.shrink view
+			refreshClients rel
 
 		name = rel.replace /\.jade$/, ''
 		name = name.replace modulesPattern, ''
 		name = name.replace viewsPattern, '$1'
-		loadView name, path, true
+		loadView name, path
 
-		for own otherName of loader.views
+		for own otherName, view of loader.views
 			if otherName isnt name
-				loadView otherName, loader.views[otherName].path
+				loadView otherName, view.path, view
 
 	# Load modules
 	else
@@ -321,48 +327,50 @@ loadFile = (path, reloadContent) ->
 					module.exports.unload()
 					loadModule path
 				# Non-reloadable modules require an application restart.
-				else if reloadContent
+				else if loader.loaded
 					return restartApp path
 			else
-					loadModule path
+				loadModule path
 
-		lintFile path, reloadContent, (content) ->
-			loader.onReady ->
-				search.update rel, content
+	# Update the search index.
+	loader.onReady ->
+		search.update rel, content
 
-wait = ->
+
+incrementWaitingCount = ->
 	loader.waitingCount++
 
-unwait = ->
+decrementWaitingCount = ->
 	loader.waitingCount--
 	if not loader.waitingCount
 		loader.queue.forEach process.nextTick
 		loader.queue = []
+		loader.loaded = true
 
 # Recursively walk a directory, calling functions on each file and directory.
 walk = (dir, fileCallback, dirCallback) ->
-	wait()
+	incrementWaitingCount()
 	fs.readdir dir, (err, files) ->
 		if err
-			unwait()
+			decrementWaitingCount()
 			return log.warn "Failed to read directory: #{dir}"
 		if dirCallback
 			dirCallback dir, files
 		files.forEach (filename) ->
 			if not ignorePattern.test filename
 				path = dir + '/' + filename
-				wait()
+				incrementWaitingCount()
 				fs.stat path, (err, stat) ->
 					if err
-						unwait()
+						decrementWaitingCount()
 						return log.warn "Failed to stat path: #{path}"
 					isDirectory = stat.isDirectory()
 					if isDirectory
 						walk path, fileCallback, dirCallback
 					else if fileCallback
 						fileCallback path, stat
-					unwait()
-		unwait()
+					decrementWaitingCount()
+		decrementWaitingCount()
 
 
 loader.public =
@@ -420,6 +428,7 @@ loadPublic = (path, content) ->
 					compilePublic group
 	return asset
 
+
 compilePublic = (group) ->
 	extension = getExtension group
 	files = config.public[group]
@@ -459,7 +468,7 @@ routePublic = (href, assetKey) ->
 			response.setHeader 'Expires', future.toUTCString()
 			response.send asset.minified or asset.content
 
-	refreshClients 'public'
+	refreshClients href
 
 
 mapPublicAssets = ->

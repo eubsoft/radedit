@@ -3,8 +3,7 @@ log = radedit.log
 
 # TODO: Save the search index to db (not just in-memory).
 
-search =
-module.exports =
+class Search
 
 	update: (rel, content) ->
 	
@@ -40,6 +39,30 @@ module.exports =
 				rel: rel
 				frequency: count / file.matches
 			term.files.sort frequencyDescending
+
+	find: (query, callback) ->
+		tokens = tokenize query
+		pivot = ''
+		fewest = Number.MAX_VALUE
+		candidates = []
+		results = []
+		for own text, count of tokens
+			term = terms[text]
+			if not term
+				return false
+			else if term.matches < fewest
+				pivot = text
+				fewest = term.matches
+				candidates = term.files
+		for candidate in candidates
+			file = files[candidate.rel]
+			results.push
+				rel: candidate.rel
+		callback results
+
+
+module.exports = search = new Search
+
 
 terms = {}
 termCount = 0
@@ -90,27 +113,6 @@ tokenize = (content, counts, importance, multiplier) ->
 	return counts
 
 
-search.find =
-find = (query, callback) ->
-	tokens = tokenize query
-	pivot = ''
-	fewest = Number.MAX_VALUE
-	candidates = []
-	results = []
-	for own text, count of tokens
-		term = terms[text]
-		if not term
-			return false
-		else if term.matches < fewest
-			pivot = text
-			fewest = term.matches
-			candidates = term.files
-	for candidate in candidates
-		file = files[candidate.rel]
-		results.push
-			rel: candidate.rel
-	callback results
-
 
 incrementValue = (object, key, amount) ->
 	count = object[key] or 0
@@ -127,6 +129,6 @@ matchesDescending = (a, b) ->
 radedit.io.connect (socket) ->
 
 	socket.on 'radedit:search', (query) ->
-		find query, (results) ->
+		search.find query, (results) ->
 			socket.emit 'radedit:searched', results
 			

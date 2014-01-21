@@ -1,4 +1,11 @@
-function ajax(url, data, onSuccess, onFailure, evalJson) {
+function getResponse(url, data, onSuccess, onFailure, evalJson) {
+	// The data argument is optional.
+	if (typeof data == 'function') {
+		evalJson = onFailure;
+		onFailure = onSuccess;
+		onSuccess = data;
+		data = 0;
+	}
 	var request;
 	if (window.XMLHttpRequest) {
 		request = new XMLHttpRequest();
@@ -13,7 +20,12 @@ function ajax(url, data, onSuccess, onFailure, evalJson) {
 				var callback = request.status == 200 ? onSuccess : onFailure || function() {};
 				var response = request.responseText;
 				if (evalJson) {
-					response = JSON.parse(response);
+					try {
+						response = JSON.parse(response);
+					}
+					catch (e) {
+						log('ERROR: Could not parse JSON', response);
+					}
 				}
 				callback(response, request);
 			}
@@ -21,8 +33,6 @@ function ajax(url, data, onSuccess, onFailure, evalJson) {
 		request.open(data ? 'POST' : 'GET', url, true);
 		if (data) {
 			request.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-			request.setRequestHeader('Content-length', data.length);
-			request.setRequestHeader('Connection', 'close');
 		}
 		request.send(data);
 	}
@@ -30,5 +40,5 @@ function ajax(url, data, onSuccess, onFailure, evalJson) {
 }
 
 function getJson(url, onSuccess, onFailure) {
-	ajax(url, 0, onSuccess, onFailure, true);
+	getResponse(url, onSuccess, onFailure, true);
 }

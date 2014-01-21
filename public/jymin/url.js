@@ -1,4 +1,18 @@
 /**
+ * Get the current location host.
+ */
+var getHost = function() {
+	return location.host;
+};
+
+/**
+ * Get the base of the current URL.
+ */
+var getBaseUrl = function() {
+	return location.protocol + '//' + getHost();
+};
+
+/**
  * Get the query parameters from a URL.
  */
 var getQueryParams = function(url) {
@@ -14,3 +28,4 @@ var getQueryParams = function(url) {
 	});
 	return query;
 };
+

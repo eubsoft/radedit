@@ -96,14 +96,19 @@ html {
 }
 
 #_MENU {
-	padding: 1em;
+	padding: 0.7em;
 	right: auto;
 	bottom: auto;
 	min-width: 24em;
 }
 
-#_MENU span {
+#_MENU label>span {
 	margin: 0 0 0 0.5em;
+}
+
+#_MENU label {
+	display: block;
+	padding: 0.3em;
 }
 
 #_TREE {

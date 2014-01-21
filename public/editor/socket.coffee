@@ -21,7 +21,7 @@ reconnect = (delay) ->
 
 # Refresh the browser.
 refresh = ->
-	location.reload()
+	#location.reload()
 
 # When the server disconnects, try to reconnect.
 socket.on 'disconnect', ->

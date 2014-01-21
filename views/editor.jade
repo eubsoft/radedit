@@ -12,9 +12,14 @@ html
 		#_NAV
 		#_CONTENT
 			#_MENU._AREA
-				label
-					input#_FULL_SOURCE(type="checkbox")
-					span Full source mode <i>(disables minification)</i>
+				div
+					label
+						input#_AUTO_SAVE(type="checkbox")
+						span Auto save <i>(when syntax passes)</i>
+				div
+					label
+						input#_FULL_SOURCE(type="checkbox")
+						span Full source mode <i>(disables minification)</i>
 			#_TREE._AREA
 			#_CONSOLE._AREA
 			#_SEARCH_RESULTS._HIDDEN

@@ -10,13 +10,14 @@ log = radedit.log
 SOCKET_EMIT_DELAY = 0 # Modify for testing latency, but don't commit anything but 0.
 VERSION_INDEX = 3
 EDIT_INDEX = 4
+AUTO_SAVE_INDEX = 5
 
 app.get '/radedit', (request, response) ->
 	rel = request.query.rel
 	respond = (file) ->
 		response.view 'radedit/editor', {file: file}
 	if rel?
-		readFile rel, (file) ->
+		getFile rel, (file) ->
 			v = file.version
 			r = stringify rel
 			c = stringify file.code
@@ -25,17 +26,27 @@ app.get '/radedit', (request, response) ->
 	else
 		respond null
 
+
 stringify = (string) ->
 	string = string.replace /\\/g, "\\\\"
 	string = string.replace /'/g, "\\'"
 	string = string.replace /\n/g, "\\n"
 	return string
 
-readFile = (rel, callback, emissionId) ->
+
+getFile = (rel, callback) ->
+	file = loader.cache[rel]
+	if file
+		callback file
+	else
+		readFile rel, callback
+
+
+readFile = (rel, callback) ->
 	path = appPath + '/' + rel
 	fs.readFile path, (err, content) ->
 		if err
-			log.warn "Could not open file (#{rel}) for editing. Assuming empty."
+			log.warn "Could not open file (#{path}) for editing. Assuming empty."
 			if not content?
 				content = ''
 		code = ('' + content).replace /\r/g, ''
@@ -47,7 +58,7 @@ readFile = (rel, callback, emissionId) ->
 			clients: {}
 			transforms: {}
 		loader.cache[rel] = file
-		callback file, emissionId
+		callback file
 
 writeFile = (rel) ->
 	file = loader.cache[rel]
@@ -84,22 +95,21 @@ io.connect (socket) ->
 	socket.on 'disconnect', ->
 		closeCurrentFile()
 
-	socket.on 'radedit:get', (json) ->
-		rel = json.rel
-		file = loader.cache[rel]
-		if file
-			sendFile file, json.EID
-		else
-			readFile rel, sendFile, json.EID
 
-		if socket.currentFile isnt file
-			closeCurrentFile()
+	socket.on 'radedit:get', (json) ->
+		getFile json.rel, (file) ->
+			sendFile file, json.EID
+			if socket.currentFile isnt file
+				closeCurrentFile()
 
 	# Incorporate a new edit from a client.
 	socket.on 'radedit:edit', (json) ->
 		EID = json.EID # Emission ID for relating the response to the request.
 		rel = json.rel # Relative file path.
 		edit = json.edit # CodeMirror change.
+
+		if json.autoSave
+			edit[AUTO_SAVE_INDEX] = true
 
 		# The client retrieved the file before editing, so it should be in cache.
 		file = loader.cache[rel]
@@ -138,6 +148,9 @@ io.connect (socket) ->
 		to = from + edit[1]
 		text = edit[2]
 		file.code = file.code.substr(0, from) + text + file.code.substr(to)
+
+		if edit[AUTO_SAVE_INDEX]
+			loader.processFile appPath + '/' + rel, file.code
 
 		# Broadcast changes to the clients that are connected to this file.
 		json =
@@ -187,8 +200,10 @@ io.connect (socket) ->
 	socket.on 'radedit:save', (json) ->
 		writeFile json.rel
 
+
 	if loader.treeString
 		socket.emit 'radedit:tree', loader.treeString
+
 	
 	if log.lines
 		socket.emit 'radedit:log', log.lines

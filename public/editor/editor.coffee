@@ -60,7 +60,7 @@ incrementVersion = ->
 	enableSaveButton true
 
 
-gotFile = (json) ->
+gotFile = (json, isInitialLoad) ->
 	currentFile = json
 	currentFile.edits = {}
 	startRevising()
@@ -114,6 +114,9 @@ gotFile = (json) ->
 			rel: rel
 			edit: edit
 
+		if getCookie 'autoSave'
+			data.autoSave = true
+
 		socketEmit 'radedit:edit', data, true
 		currentFile.edits["e#{data.EID}"] = edit
 
@@ -125,8 +128,10 @@ gotFile = (json) ->
 	editor.on 'cursorActivity', ->
 		setEditorUrl()
 
+	log "isInitialLoad: #{isInitialLoad}"
 	document.title = "RadEdit: #{rel}"
-	setEditorUrl true
+	shouldPushHistory = not isInitialLoad
+	setEditorUrl shouldPushHistory
 
 
 scrollEditorTo = (x, y) ->
@@ -137,16 +142,17 @@ getLineAndCh = (param) ->
 	if param
 		param = param.split(',')
 		param =
-			line: param[0]
-			ch: param[1]
+			line: param[0] * 1
+			ch: param[1] * 1
 
 setEditorSelection = (anchor, head) ->
-	anchor = getLineAndCh anchor
-	head = getLineAndCh head
-	#editor.setSelection anchor, head
+	if anchor or head
+		anchor = getLineAndCh anchor
+		head = getLineAndCh head
+		editor.setSelection anchor, head
 
 
-setEditorUrl = (isNewFile) ->
+setEditorUrl = (shouldPushHistory) ->
 	clearTimeout setEditorUrl.T
 	setEditorUrl.T = setTimeout ->
 		clearTimeout setEditorUrl.T
@@ -163,9 +169,11 @@ setEditorUrl = (isNewFile) ->
 		if head
 			href += '&h=' + "#{head.line},#{head.ch}"
 		if href isnt location.href
-			if isNewFile
+			if shouldPushHistory
+				log 'push'
 				pushHistory href
 			else
+				log 'replace'
 				replaceHistory href
 	, EDITOR_HISTORY_DELAY
 
@@ -290,9 +298,14 @@ applyTransformToEdit = (transform, edit) ->
 file = window.file
 if file
 	query = getQueryParams()
-	gotFile file
+	isInitialLoad = true
+	gotFile file, isInitialLoad
 	scrollEditorTo query.x, query.y
 	setEditorSelection query.a, query.h
+
+bind window, 'popstate', ->
+	log 'popstate'
+	fetchFile getQueryParams().rel
 
 # Hide the menu when the editor is clicked.
 delegate document, '.CodeMirror', 'mousedown', hideMenuArea
