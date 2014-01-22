@@ -61,6 +61,7 @@ incrementVersion = ->
 
 
 gotFile = (json, isInitialLoad) ->
+	log 'gotFile: ' + json.rel
 	currentFile = json
 	currentFile.edits = {}
 	startRevising()
@@ -128,54 +129,64 @@ gotFile = (json, isInitialLoad) ->
 	editor.on 'cursorActivity', ->
 		setEditorUrl()
 
-	log "isInitialLoad: #{isInitialLoad}"
 	document.title = "RadEdit: #{rel}"
 	shouldPushHistory = not isInitialLoad
-	setEditorUrl shouldPushHistory
+	setTimeout ->
+		doSetEditorUrl shouldPushHistory
+	, 0
 
 
+# Scroll the editor to a specified pixel offset.
 scrollEditorTo = (x, y) ->
-	editor.scrollTo x, y
+	# Ensure that we are scrolling to integer locations.
+	editor.scrollTo x * 1, y * 1
+	# Trigger a redraw to ensure lines are rendered in the viewport.
 	editor.setSize()
 
-getLineAndCh = (param) ->
-	if param
-		param = param.split(',')
-		param =
-			line: param[0] * 1
-			ch: param[1] * 1
+
+# Return a line number and character number from a comma-delimited pair.
+getLineAndCharacter = (commaPair) ->
+	if commaPair
+		lineAndCharacter = commaPair.split(',')
+		lineAndCharacter =
+			line: lineAndCharacter[0] * 1
+			ch: lineAndCharacter[1] * 1
+
 
 setEditorSelection = (anchor, head) ->
 	if anchor or head
-		anchor = getLineAndCh anchor
-		head = getLineAndCh head
+		anchor = getLineAndCharacter anchor
+		head = getLineAndCharacter head
 		editor.setSelection anchor, head
 
 
 setEditorUrl = (shouldPushHistory) ->
 	clearTimeout setEditorUrl.T
 	setEditorUrl.T = setTimeout ->
-		clearTimeout setEditorUrl.T
-		doc = editor.doc
-		sel = doc.sel or {}
-		anchor = sel.anchor
-		head = sel.head
-		href = location.protocol + '//' + location.host
-		href += '/radedit?rel=' + currentFile.rel
-		href += '&x=' + doc.scrollLeft
-		href += '&y=' + doc.scrollTop
-		if anchor
-			href += '&a=' + "#{anchor.line},#{anchor.ch}"
-		if head
-			href += '&h=' + "#{head.line},#{head.ch}"
-		if href isnt location.href
-			if shouldPushHistory
-				log 'push'
-				pushHistory href
-			else
-				log 'replace'
-				replaceHistory href
+		doSetEditorUrl shouldPushHistory
 	, EDITOR_HISTORY_DELAY
+
+doSetEditorUrl = (shouldPushHistory) ->
+	clearTimeout setEditorUrl.T
+	doc = editor.doc
+	sel = doc.sel or {}
+	anchor = sel.anchor
+	head = sel.head
+	href = location.protocol + '//' + location.host
+	href += '/radedit?rel=' + currentFile.rel
+	href += '&x=' + doc.scrollLeft
+	href += '&y=' + doc.scrollTop
+	if anchor
+		href += '&a=' + "#{anchor.line},#{anchor.ch}"
+	if head
+		href += '&h=' + "#{head.line},#{head.ch}"
+	if href isnt location.href
+		if shouldPushHistory
+			log 'push'
+			pushHistory href
+		else
+			log 'replace'
+			replaceHistory href
 
 
 socketOn 'radedit:got', gotFile
@@ -298,14 +309,16 @@ applyTransformToEdit = (transform, edit) ->
 file = window.file
 if file
 	query = getQueryParams()
+	log query
 	isInitialLoad = true
 	gotFile file, isInitialLoad
 	scrollEditorTo query.x, query.y
 	setEditorSelection query.a, query.h
 
 bind window, 'popstate', ->
-	log 'popstate'
-	fetchFile getQueryParams().rel
+	rel = getQueryParams().rel
+	if rel isnt currentFile.rel
+		fetchFile rel
 
 # Hide the menu when the editor is clicked.
 delegate document, '.CodeMirror', 'mousedown', hideMenuArea
