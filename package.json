@@ -25,6 +25,7 @@
     }
   ],
   "dependencies": {
+  	"codemirror": "*",
     "coffee-script": "*",
     "colors": "*",
     "tracer": "*",

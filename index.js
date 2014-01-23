@@ -20,7 +20,7 @@ if (!/[\/\\]node_modules[\/\\]radedit[\/\\]/.test(caller)) {
 		'db',
 		'shrinker', // Used by loader.
 		'search', // Used by loader.
-		'loader' // Load after everything.
+		'loader'
 		];
 
 	modules.forEach(function (name) {

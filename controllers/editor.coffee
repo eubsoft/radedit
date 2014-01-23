@@ -79,15 +79,18 @@ io.connect (socket) ->
 		if file
 			delete file.clients[socket.id]
 
-	sendFile = (file, emissionId) ->
+	connectToFile = (file) ->
 		rel = file.rel
 		socket.currentFile = file
 		socket.nextEdit[rel] = 0
 		socket.edits[rel] = {}
 		file.clients[socket.id] = socket
+
+	sendFile = (file, emissionId) ->
+		connectToFile file
 		socket.emit 'radedit:got',
 			EID: emissionId
-			rel: rel
+			rel: file.rel
 			code: file.code
 			version: file.version
 			canSave: (file.code isnt file.savedCode)
@@ -115,6 +118,10 @@ io.connect (socket) ->
 		file = loader.cache[rel]
 		if not file
 			return log.error "Received change for non-existent file: #{rel}"
+
+		# If this client hasn't edited the file yet, connect.
+		if not socket.nextEdit[rel]
+			connectToFile file
 
 		nextEdit = socket.nextEdit[rel]
 		editNumber = edit[EDIT_INDEX]
@@ -173,6 +180,7 @@ io.connect (socket) ->
 		# Call this function again in case another edit is queued.
 		socket.nextEdit[rel]++
 		integrateEdits file
+
 
 	applyTransform = (file, version, edit) ->
 		transform = file.transforms["v#{version}"]

@@ -73,7 +73,7 @@ class Loader
 			vTag = chars[number % radix] + vTag
 		@vTag = vTag
 
-	loadFile: (path, content) ->	
+	loadFile: (path, content) ->
 		if @loaded
 			log "Updated: #{path}"
 			@updateVTag()
@@ -129,16 +129,11 @@ radeditPublic =
 		"jymin/history.js"
 		"jymin/md5.js"
 		"jymin/dollar.js"
-		"codemirror/codemirror.js"
-		"codemirror/coffeescript.js"
-		"codemirror/css.js"
-		#"codemirror/htmlmixed.js"
-		"codemirror/jade.js"
-		"codemirror/javascript.js"
-		"codemirror/less.js"
-		#"codemirror/sass.js"
-		#"codemirror/sql.js"
-		#"codemirror/xml.js"
+		"npm codemirror lib/codemirror.js"
+		"npm codemirror mode/coffeescript/coffeescript.js"
+		"npm codemirror mode/css/css.js"
+		"npm codemirror mode/jade/jade.js"
+		"npm codemirror mode/javascript/javascript.js"
 		"editor/storage.coffee"
 		"editor/icons.coffee"
 		"editor/key_bindings.coffee"
@@ -152,10 +147,27 @@ radeditPublic =
 		"jymin/closure_foot.js"
 	]
 
-for href, components of radeditPublic
-	for componentRel, index in components
-		components[index] = publicRel + '/' + componentRel
-	config.public[href] = components
+expandPublics = ->
+	for href, components of radeditPublic
+		for componentRel, index in components
+			parts = componentRel.split ' '
+			if parts[0] is 'npm'
+				path = require.resolve parts[1]
+				path = path.replace /\\/g, '/'
+				path = path.replace /(\/node_modules\/[^\/]+\/).*?$/, '$1'
+				path += parts[2]
+				scheduleLoading = (path) ->
+					process.nextTick ->
+						expandPublics[path] = true
+						loader.loadFile path
+				scheduleLoading path
+				rel = getRel path
+			else
+				rel = publicRel + '/' + componentRel
+			components[index] = rel
+		config.public[href] = components
+
+expandPublics()
 
 modifiedTimes = {}
 
@@ -276,16 +288,8 @@ loader.processFile =
 processFile = (path, content) ->
 	rel = getRel path
 
-	if publicPattern.test rel
-		content = loadPublic path, content
-		type = getMime(path) or 'text/html'
-		href = rel.replace modulesPattern, ''
-		href = href.replace publicPattern, '$1'
-		href = href.replace /\.html$/, ''
-		href = href.replace /\.coffee$/, '.js'
-		href = '/' + href
-		asset = createPublicAsset href, content
-		routePublic href, rel
+	if expandPublics[path] or publicPattern.test rel
+		loadPublic path, content
 
 	# Load jade views for the server.
 	else if getExtension(rel) is 'jade'
@@ -417,6 +421,7 @@ loadPublic = (path, content) ->
 
 	asset = createPublicAsset rel, content
 	loader.public.assets[rel] = asset
+
 	if /jymin/.test rel
 		something = true # TODO: Figure out why removing this fucks things up.
 	if groups = loader.public.parents[rel]
@@ -426,6 +431,15 @@ loadPublic = (path, content) ->
 				for own group, isPending of loader.public.pending
 					delete loader.public.pending[group]
 					compilePublic group
+
+	type = getMime(path) or 'text/html'
+	href = rel.replace modulesPattern, ''
+	href = href.replace publicPattern, '$1'
+	href = href.replace /\.html$/, ''
+	href = href.replace /\.coffee$/, '.js'
+	href = '/' + href
+	routePublic href, rel
+
 	return asset
 
 
@@ -484,3 +498,4 @@ mapPublicAssets = ->
 
 loader.updateVTag()
 mapPublicAssets()
+
