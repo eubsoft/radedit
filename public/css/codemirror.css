@@ -1,7 +1,7 @@
 .CodeMirror {
 	z-index: 1;
 	/* Set height, width, borders, and global font properties here */
-	font-family: Monaco, Menlo,"Andale Mono","lucida console","Courier New",monospace !important;
+	font-family: "Lucida Console", "Courier New", monospace !important;
 }
 
 .CodeMirror-scroll {
@@ -15,7 +15,7 @@
 	padding: 4px 0; /* Vertical padding around content */
 }
 .CodeMirror pre {
-	padding: 0 4px; /* Horizontal padding of content */
+	padding: 1px 4px; /* Line spacing and Horizontal padding of content */
 }
 
 .CodeMirror-scrollbar-filler, .CodeMirror-gutter-filler {

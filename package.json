@@ -25,6 +25,7 @@
     }
   ],
   "dependencies": {
+    "clean-css": "*",
   	"codemirror": "*",
     "coffee-script": "*",
     "colors": "*",
@@ -33,10 +34,10 @@
     "socket.io": "*",
     "orm": "*",
     "jade": "*",
+    "jymin": "*",
     "mocha": "*",
     "should": "*",
-    "uglify-js": "*",
-    "clean-css": "*"
+    "uglify-js": "*"
   },
   "devDependencies": {
   },

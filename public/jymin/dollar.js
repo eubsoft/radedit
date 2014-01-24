@@ -1,2 +1,0 @@
-var $ = getElement;
-var $$ = getElementsByTagAndClass;
