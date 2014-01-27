@@ -1,7 +1,7 @@
 .CodeMirror {
 	z-index: 1;
 	/* Set height, width, borders, and global font properties here */
-	font-family: "Lucida Console", "Courier New", monospace !important;
+	font-family: Menlo, "Lucida Console", "Courier New", monospace !important;
 }
 
 .CodeMirror-scroll {
@@ -60,9 +60,13 @@
 
 /* DEFAULT THEME */
 
+.cm-qualifier { color: #ddd; }
+.cm-variable { color: #ddd; }
+.cm-property { color: #9be; }
 .cm-keyword { color: #fe9; }
+.cm-tag { color: #98e; }
 .cm-atom { color: #fc0; }
-.cm-number { color:  #c74; }
+.cm-number { color:	#e96; }
 .cm-def { color: #8ac; }
 .cm-operator { color: #ca6; }
 .cm-punctuation { color: #ca6; }
@@ -70,7 +74,6 @@
 .cm-string { color: #8c6; }
 .cm-string-2 { color: #b61; }
 .cm-builtin { color: #ca6; }
-.cm-tag { color: #974; }
 .cm-attribute { color: #db6; }
 .cm-header { color: #f60; }
 .cm-hr { color: #aaa; }
@@ -78,11 +81,11 @@
 .cm-error { border-bottom: 1px solid #c00; }
 .cm-negative { color: #d44; }
 .cm-positive { color: #292; }
-.cm-header, .cm-strong { font-weight: bold; }
-.cm-em { font-style: italic; }
-
 .cm-error { color: #c00; }
 .cm-invalidchar {color: #c00; }
+
+.cm-header, .cm-strong { font-weight: bold; }
+.cm-em { font-style: italic; }
 
 div.CodeMirror span.CodeMirror-matchingbracket { outline: 1px solid #666; color: #fff !important; }
 div.CodeMirror span.CodeMirror-nonmatchingbracket { color: #c00; }
@@ -233,7 +236,7 @@ div.CodeMirror span.CodeMirror-nonmatchingbracket { color: #c00; }
 	visibility: visible;
 }
 
-.CodeMirror-focused .CodeMirror-selected { background: #444; }
+.CodeMirror-focused .CodeMirror-selected { background: #128; }
 
 .cm-searching {
 	background: #ffa;
