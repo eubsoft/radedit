@@ -186,7 +186,6 @@ ignorePattern = ignorePattern.replace /(^\s|\s+$)/, ''
 ignorePattern = ignorePattern.replace /\./g, '\\.'
 ignorePattern = ignorePattern.replace /\*/g, '.*'
 ignorePattern = ignorePattern.replace /\s+/g, '|'
-ignorePattern = ignorePattern.replace /\|node_modules/g, ''
 ignorePattern = new RegExp "^(#{ignorePattern})$"
 
 
