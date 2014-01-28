@@ -149,7 +149,15 @@ radeditPublic =
 	]
 
 expandPublics = ->
+
 	for href, components of radeditPublic
+		for componentRel, index in components
+			parts = componentRel.split ' '
+			if parts[0] isnt 'npm'
+				components[index] = publicRel + '/' + componentRel
+		config.public[href] = components
+
+	for href, components of config.public
 		for componentRel, index in components
 			parts = componentRel.split ' '
 			if parts[0] is 'npm'
@@ -162,11 +170,9 @@ expandPublics = ->
 						expandPublics[path] = true
 						loader.loadFile path
 				scheduleLoading path
-				rel = getRel path
-			else
-				rel = publicRel + '/' + componentRel
-			components[index] = rel
+				components[index] = getRel path
 		config.public[href] = components
+
 
 expandPublics()
 
@@ -423,8 +429,6 @@ loadPublic = (path, content) ->
 	asset = createPublicAsset rel, content
 	loader.public.assets[rel] = asset
 
-	if /jymin/.test rel
-		something = true # TODO: Figure out why removing this fucks things up.
 	if groups = loader.public.parents[rel]
 		groups.forEach (group) ->
 			loader.public.pending[group] = true
