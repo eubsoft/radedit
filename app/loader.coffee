@@ -89,7 +89,7 @@ getRel = (path) ->
 	if path.substr(0, appPath.length) is appPath
 		return path.substr appPath.length + 1
 	else
-		return path.replace modulesPattern, '../node_modules/'
+		return path
 
 
 getExtension = (file) ->
@@ -107,6 +107,7 @@ publicPattern = /(^|[\/\\])public[\/\\]/
 viewsPattern = /(^|[\/\\])views[\/\\]/
 
 moduleRoot = __dirname.replace /[\/\\]app$/, ''
+moduleRoot = moduleRoot.replace /\\/g, '/'
 publicRel = getRel moduleRoot + '/public'
 
 radeditPublic =
@@ -161,10 +162,12 @@ expandPublics = ->
 		for componentRel, index in components
 			parts = componentRel.split ' '
 			if parts[0] is 'npm'
-				path = require.resolve parts[1]
+				name = parts[1]
+				path = require.resolve name
 				path = path.replace /\\/g, '/'
-				path = path.replace /(\/node_modules\/[^\/]+\/).*?$/, '$1'
-				path += parts[2]
+				middle = "/node_modules/#{name}/"
+				path = path.split middle
+				path = path[0] + middle + parts[2]
 				scheduleLoading = (path) ->
 					process.nextTick ->
 						expandPublics[path] = true
@@ -294,7 +297,6 @@ lintFile = (path, content, callback) ->
 loader.processFile =
 processFile = (path, content) ->
 	rel = getRel path
-
 	if expandPublics[path] or publicPattern.test rel
 		loadPublic path, content
 

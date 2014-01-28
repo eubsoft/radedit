@@ -1,13 +1,13 @@
-var caller = module.parent.filename;
+var caller = module.parent.filename.replace(/\\/g, '/');
 
 var radedit = module.exports = function (appName) {
 	console.log('TODO: Create RadEdit app "' + appName + '"');
 };
 
-if (!/[\/\\]node_modules[\/\\]radedit[\/\\]/.test(caller)) {
+if (!/\/node_modules\/radedit\//.test(caller)) {
 
 	radedit.radeditPath = __dirname;
-	radedit.appPath = caller.replace(/[\/\\][^\/\\]+$/, '');
+	radedit.appPath = caller.replace(/\/[^\/]+$/, '');
 	radedit.config = require(radedit.appPath + '/config/config.json');
 	radedit.stage = process.env.NODE_ENV || 'dev';
 
