@@ -61,7 +61,6 @@ incrementVersion = ->
 
 
 gotFile = (json, isInitialLoad) ->
-	log 'gotFile: ' + json.rel
 	currentFile = json
 	currentFile.edits = {}
 	startRevising()
@@ -90,8 +89,12 @@ gotFile = (json, isInitialLoad) ->
 			change.text[i] = text.replace '  ', '\t'
 
 	editor.on 'change', (cm, change) ->
+		processEditorChange change
+
+	processEditorChange = (change) ->
 		if change.origin is 'io'
 			return
+		log change
 		from = 0
 		to = change.from.line - 1
 		if to > -1
@@ -99,10 +102,12 @@ gotFile = (json, isInitialLoad) ->
 				from += editor.doc.getLine(i).length + 1
 		from += change.from.ch
 		text = removed = ''
-		while change
-			text += change.text.join '\n'
-			removed += change.removed.join '\n'
-			change = change.next
+		text += change.text.join '\n'
+		removed += change.removed.join '\n'
+
+		if change.next
+			# TODO: Apply a transformation to the next change.
+			processEditorChange change.next
 
 		edit = [
 			from
@@ -122,6 +127,7 @@ gotFile = (json, isInitialLoad) ->
 		currentFile.edits["e#{data.EID}"] = edit
 
 		enableSaveButton true
+
 
 	editor.on 'scroll', (cm) ->
 		setEditorUrl()
@@ -172,20 +178,19 @@ doSetEditorUrl = (shouldPushHistory) ->
 	sel = doc.sel or {}
 	anchor = sel.anchor
 	head = sel.head
+	x = forceNumber doc.scrollLeft
+	y = forceNumber doc.scrollTop
 	href = location.protocol + '//' + location.host
-	href += '/radedit?rel=' + currentFile.rel
-	href += '&x=' + doc.scrollLeft
-	href += '&y=' + doc.scrollTop
+	href += "/radedit?rel=#{currentFile.rel}"
+	href += "&x=#{x}&y=#{y}"
 	if anchor
 		href += '&a=' + "#{anchor.line},#{anchor.ch}"
 	if head
 		href += '&h=' + "#{head.line},#{head.ch}"
 	if href isnt location.href
 		if shouldPushHistory
-			log 'push'
 			pushHistory href
 		else
-			log 'replace'
 			replaceHistory href
 
 
@@ -309,7 +314,6 @@ applyTransformToEdit = (transform, edit) ->
 file = window.file
 if file
 	query = getQueryParams()
-	log query
 	isInitialLoad = true
 	gotFile file, isInitialLoad
 	scrollEditorTo query.x, query.y

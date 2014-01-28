@@ -119,6 +119,7 @@ radeditPublic =
 		"npm jymin src/closure_head.js"
 		"npm jymin src/logging.js"
 		"npm jymin src/strings.js"
+		"npm jymin src/numbers.js"
 		"npm jymin src/url.js"
 		"npm jymin src/collections.js"
 		"npm jymin src/cookies.js"
