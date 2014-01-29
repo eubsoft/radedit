@@ -10,7 +10,7 @@ class Node
 		@children.push child
 		return child
 
-socket.on 'radedit:tree', (treeString) ->
+socketOn 'radedit:tree', (treeString) ->
 	node = new Node
 	for character in treeString
 		if character is '/'

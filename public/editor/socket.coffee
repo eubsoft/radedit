@@ -24,18 +24,18 @@ refresh = ->
 	#location.reload()
 
 # When the server disconnects, try to reconnect.
-socket.on 'disconnect', ->
+socketOn 'disconnect', ->
 	reconnect RECONNECT_DELAY
 	showConnectionStatus '_OFF'
 
 # When the server reconnects, cancel reconnection retries.
-socket.on 'connect', ->
+socketOn 'connect', ->
 	clearTimeout reconnect.t
 	showConnectionStatus '_ON'
 
 # Wait to listen for refresh signals in case lingering calls trickle in.
 setTimeout(->
-	socket.on 'refresh', refresh
+	socketOn 'refresh', refresh
 , REFRESH_SETUP_DELAY)
 
 # Try to emit data, and optionally retry.
@@ -71,7 +71,7 @@ socketEmit.EID = 1
 
 # Try to emit data, and optionally retry.
 socketOn = (tag, callback) ->
-	socket.on tag, (data) ->
+	socketOn tag, (data) ->
 		emissionId = data.EID
 		if emissionId
 			started = socketEmit['STARTED' + emissionId]

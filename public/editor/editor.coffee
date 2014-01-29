@@ -44,7 +44,7 @@ saveFile = ->
 	if hasClass '_SAVE__BUTTON', '_DISABLED'
 		return
 	enableSaveButton false
-	socket.emit 'radedit:save', {rel: currentFile.rel}
+	socketEmit 'radedit:save', {rel: currentFile.rel}
 
 startRevising = ->
 	if not currentFile.editNumber

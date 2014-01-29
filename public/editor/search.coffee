@@ -27,9 +27,9 @@ searchQuery = 0
 
 bind $searchInput, 'keyup mouseup', ->
 	searchQuery = valueOf $searchInput
-	socket.emit 'radedit:search', searchQuery
+	socketEmit 'radedit:search', searchQuery
 
-socket.on 'radedit:searched', (results) ->
+socketOn 'radedit:searched', (results) ->
 	removeChildren $searchResults
 	for result in results
 		html = result.rel.replace searchQuery, "<b>#{searchQuery}</b>"

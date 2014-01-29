@@ -116,7 +116,6 @@ radeditPublic =
 		"css/codemirror.css"
 	],
 	"/radedit.js": [
-		"npm jymin src/io.js"
 		"npm jymin src/closure_head.js"
 		"npm jymin src/logging.js"
 		"npm jymin src/strings.js"
@@ -130,6 +129,8 @@ radeditPublic =
 		"npm jymin src/ajax.js"
 		"npm jymin src/history.js"
 		"npm jymin src/md5.js"
+		"npm jymin src/dates.js"
+		"npm jymin src/socket.js"
 		"npm jymin src/dollar.js"
 		"npm codemirror lib/codemirror.js"
 		"npm codemirror mode/coffeescript/coffeescript.js"
@@ -140,7 +141,6 @@ radeditPublic =
 		"editor/icons.coffee"
 		"editor/key_bindings.coffee"
 		"editor/nav.coffee"
-		"editor/socket.coffee"
 		"editor/menu.coffee"
 		"editor/tree.coffee"
 		"editor/console.coffee"

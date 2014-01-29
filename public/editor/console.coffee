@@ -15,7 +15,7 @@ scrollConsole = ->
 	$console.scrollTop = $console.scrollHeight
 
 consoleLineCount = 0
-socket.on 'radedit:log', (lines) ->
+socketOn 'radedit:log', (lines) ->
 	previousLineCount = consoleLineCount
 	forEach lines, (line) ->
 		if ++consoleLineCount > MAX_CONSOLE_LINES
