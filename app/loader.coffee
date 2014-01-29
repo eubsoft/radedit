@@ -304,15 +304,27 @@ processFile = (path, content) ->
 		# Load dependent views
 		loadView = (name, path, oldView) ->
 			code = if oldView then oldView.code else '' + content
+
+			# "AUTOROUTE" comments cause views to route based on view name.
+			if /^\/\/AUTOROUTE/.test code
+				code = code.replace /^\/\/AUTOROUTE\s*/, ''
+				href = '/' + name.replace /(^|\/)index$/, '$1'
+				app.get href, (request, response) ->
+					response.view name
+
 			view = jade.compile code, {filename: path}
 			view.path = path
 			view.code = code
 			view.minified = code
+
 			view.afterShrunk = ->
 				minPath = path.replace /\.jade$/, '.min.jade'
 				minCode = view.minified.replace /(^|\n)(\s+include\s+\S+)/g, '$1$2.min'
+				minCode = minCode.replace /(^|[^:])\/\/[\s\S]*?\n/g, '$1\n'
 				view.min = jade.compile minCode, {filename: minPath}
+
 			loader.views[name] = view
+
 			loader.onReady ->
 				radedit.shrinker.shrink view
 			refreshClients rel
