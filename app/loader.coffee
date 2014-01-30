@@ -81,6 +81,16 @@ class Loader
 		lintFile path, content, (content) ->
 			processFile path, content
 
+	resolvePath: (path) ->
+		parts = path.split ' '
+		if parts[0] is 'npm'
+			name = parts[1]
+			path = require.resolve name
+			path = path.replace /\\/g, '/'
+			middle = "/node_modules/#{name}/"
+			path = path.split middle
+			path = path[0] + middle + parts[2]
+
 module.exports =
 loader = new Loader
 
@@ -99,7 +109,6 @@ getExtension = (file) ->
 loader.getMime =
 getMime = (path) ->
 	return loader.mimes[getExtension path]
-
 
 
 modulesPattern = /^.*[\/\\]node_modules[\/\\]/
@@ -162,12 +171,7 @@ expandPublics = ->
 		for componentRel, index in components
 			parts = componentRel.split ' '
 			if parts[0] is 'npm'
-				name = parts[1]
-				path = require.resolve name
-				path = path.replace /\\/g, '/'
-				middle = "/node_modules/#{name}/"
-				path = path.split middle
-				path = path[0] + middle + parts[2]
+				path = loader.resolvePath componentRel
 				scheduleLoading = (path) ->
 					process.nextTick ->
 						expandPublics[path] = true
@@ -176,8 +180,8 @@ expandPublics = ->
 				components[index] = getRel path
 		config.public[href] = components
 
-
 expandPublics()
+
 
 modifiedTimes = {}
 
@@ -262,7 +266,7 @@ refreshClients = (changed) ->
 
 
 restartApp = (path) ->
-	log.warn "Critical file changed (#{path}). Restarting app."
+	log.warn "Restarting app for change in #{path}"
 	setTimeout process.exit, APP_RESTART_DELAY
 
 
@@ -273,7 +277,6 @@ loadModule = (path) ->
 
 
 lintFile = (path, content, callback) ->
-
 	doLinting = (err, content) ->
 		if err
 			throw err
@@ -306,8 +309,9 @@ processFile = (path, content) ->
 			code = if oldView then oldView.code else '' + content
 
 			# "AUTOROUTE" comments cause views to route based on view name.
-			if /^\/\/AUTOROUTE/.test code
-				code = code.replace /^\/\/AUTOROUTE\s*/, ''
+			autoPattern = /^\/\/-?\s*AUTOROUTE\s*/
+			if autoPattern.test code
+				code = code.replace autoPattern, ''
 				href = '/' + name.replace /(^|\/)index$/, '$1'
 				app.get href, (request, response) ->
 					response.view name
@@ -340,21 +344,20 @@ processFile = (path, content) ->
 
 	# Load modules
 	else
-		if loader.isWindows
-			path = path.replace /\//g, '\\'
 		if /(coffee|js|json)$/.test path
 			# If it's not the first time, we may need to reload or restart.
-			module = require.cache[path]
+			modulePath = if loader.isWindows then path.replace /\//g, '\\' else path
+			module = require.cache[modulePath]
 			if module
 				# Reloadable modules have an unload function.
 				if module.exports.unload
 					module.exports.unload()
-					loadModule path
+					loadModule modulePath
 				# Non-reloadable modules require an application restart.
 				else if loader.loaded
 					return restartApp path
 			else
-				loadModule path
+				loadModule modulePath
 
 	# Update the search index.
 	loader.onReady ->
@@ -370,6 +373,7 @@ decrementWaitingCount = ->
 		loader.queue.forEach process.nextTick
 		loader.queue = []
 		loader.loaded = true
+
 
 # Recursively walk a directory, calling functions on each file and directory.
 walk = (dir, fileCallback, dirCallback) ->
@@ -432,9 +436,11 @@ loadPublic = (path, content) ->
 	extension = getExtension path
 	if extension is 'coffee'
 		try
+			noClosure = /^#NOCLOSURE/.test content
 			content = coffee.compile '' + content
-			content = content.replace /^\(function\(\) \{/, ''
-			content = content.replace /\}\)\.call\(this\);[\r\n]*$/, ''
+			if noClosure
+				content = content.replace /^\(function\(\) \{/, ''
+				content = content.replace /\}\)\.call\(this\);[\r\n]*$/, ''
 		catch e
 			log.debug "Can't compile #{path}"
 			log.error e

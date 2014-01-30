@@ -1,3 +1,5 @@
+#NOCLOSURE
+
 $searchBox = addElement $nav, '#_SEARCH_BOX'
 $searchBoxInner = addElement $searchBox, 'div'
 setHtml $searchBoxInner, icons._SEARCH

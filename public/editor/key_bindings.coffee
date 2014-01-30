@@ -1,3 +1,5 @@
+#NOCLOSURE
+
 altDown = false
 ctrlDown = false
 shiftDown = false

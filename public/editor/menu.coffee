@@ -1,3 +1,5 @@
+#NOCLOSURE
+
 menuToggles =
 	debug: '_FULL_SOURCE'
 	autoSave: '_AUTO_SAVE'

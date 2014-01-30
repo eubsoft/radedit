@@ -1,3 +1,5 @@
+#NOCLOSURE
+
 # Time to wait before requesting a missing transform.
 TRANSFORM_SEQUENCE_TIMEOUT = 2500
 

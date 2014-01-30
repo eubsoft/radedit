@@ -1,3 +1,5 @@
+#NOCLOSURE
+
 $nav = $ '_NAV'
 
 # Populate the nav.

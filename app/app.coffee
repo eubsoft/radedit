@@ -33,7 +33,8 @@ app.get '/ping', (request, response) ->
 
 http.ServerResponse.prototype.view = (viewName, context) ->
 	request = this.req
-	context = context or {}	
+	context = context or {}
+	context.viewName = viewName
 	view = radedit.loader.views[viewName]
 	if view
 		if request.cookies.debug

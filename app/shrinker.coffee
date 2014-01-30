@@ -1,4 +1,5 @@
 radedit = require 'radedit'
+log = radedit.log
 
 SETUP_DELAY = 1000
 
@@ -22,7 +23,6 @@ module.exports =
 		return replacement
 
 	shrink: (asset) ->
-		
 		# Don't shrink non-textual files.
 		if asset.rel and not /^text/.test radedit.loader.getMime asset.rel or ''
 			return

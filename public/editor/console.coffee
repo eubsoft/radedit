@@ -1,3 +1,4 @@
+#NOCLOSURE
 MAX_CONSOLE_LINES = 1000
 
 $console = $ '_CONSOLE'

@@ -1,3 +1,5 @@
+#NOCLOSURE
+
 # Icons are specified as:
 #	key: [
 #		[strokeColor, fillColor, svgPath]

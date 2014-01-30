@@ -4,9 +4,8 @@ log = radedit.log
 # TODO: Save the search index to db (not just in-memory).
 
 class Search
-
-	update: (rel, content) ->
 	
+	update: (rel, content) ->	
 		file = files[rel]
 		if file
 			# TODO: Unload file from index before reloading it.
@@ -80,8 +79,8 @@ newTerm = (text) ->
 newFile = (rel, content) ->
 	++fileCount
 	
-	if fileCount % 25 is 0
-		log "#{fileCount} files in search index."
+	#if fileCount % 25 is 0
+	#	log "#{fileCount} files in search index."
 
 	file =
 		rel: rel

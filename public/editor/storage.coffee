@@ -1,3 +1,5 @@
+#NOCLOSURE
+
 localStorage = window.localStorage
 
 getValue = (key) ->

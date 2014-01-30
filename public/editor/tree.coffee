@@ -1,3 +1,5 @@
+#NOCLOSURE
+
 toggleTree = ->
 	toggleClass '_TREE__BUTTON', '_ON'
 	toggleClass '_TREE', '_ON'
