@@ -180,16 +180,22 @@ expandPublics = ->
 				components[index] = getRel path
 		config.public[href] = components
 
+config.public = config.public or {}
 expandPublics()
 
 
 modifiedTimes = {}
 
-ignorePattern = '.\n' + fs.readFileSync appPath + '/.gitignore'
+try
+	ignorePattern = '.\n' + fs.readFileSync appPath + '/.gitignore'
+catch e
+	ignorePattern = ''
+
 ignorePattern = ignorePattern.replace /(^\s|\s+$)/, ''
 ignorePattern = ignorePattern.replace /\./g, '\\.'
 ignorePattern = ignorePattern.replace /\*/g, '.*'
 ignorePattern = ignorePattern.replace /\s+/g, '|'
+ignorePattern += '|.*-MIN\.jade';
 ignorePattern = new RegExp "^(#{ignorePattern})$"
 
 
@@ -322,10 +328,15 @@ processFile = (path, content) ->
 			view.minified = code
 
 			view.afterShrunk = ->
-				minPath = path.replace /\.jade$/, '.min.jade'
-				minCode = view.minified.replace /(^|\n)(\s+include\s+\S+)/g, '$1$2.min'
-				minCode = minCode.replace /(^|[^:])\/\/[\s\S]*?\n/g, '$1\n'
-				view.min = jade.compile minCode, {filename: minPath}
+				minPath = path.replace /\.jade$/, '-MIN.jade'
+				minCode = view.minified.replace /(include|extends) (\S+)/g, '$1 $2-MIN'
+				fs.writeFile minPath, minCode, (err) ->
+					if err
+						throw err
+					view.min = jade.compile minCode, {filename: minPath}
+					#fs.unlink minPath, (err) ->
+					#	if err
+					#		throw err
 
 			loader.views[name] = view
 

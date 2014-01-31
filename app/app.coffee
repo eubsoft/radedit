@@ -10,8 +10,11 @@ app.use express.cookieParser config.cookieSecret
 app.use radedit.auth
 app.use app.router
 
-app.listener = app.listen config.port
+if not config.port
+	config.port = 1337
+	log.warn "Defaulting to port #{config.port}."
 
+app.listener = app.listen config.port
 
 app.get '/ping', (request, response) ->
 	response.json

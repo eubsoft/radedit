@@ -6,7 +6,10 @@ log = radedit.log
 
 io = module.exports = socketIo.listen app.listener, {log: false}
 
-log.info "Listening on port #{config.port}."
+suffix = if config.port is 80 then '' else ':' + config.port
+location = "http://localhost#{suffix}/"
+
+log.info "Listening at #{location}"
 
 io.connect = (callback) ->
 	io.sockets.on 'connection', callback
