@@ -1,7 +1,7 @@
 {
   "name": "radedit",
-  "description": "Rapid App Development framework with collaborative editor.",
-  "version": "0.0.2",
+  "description": "Collaborative Development framework",
+  "version": "0.0.3",
   "author": {
     "name": "Sam Eubank",
     "email": "sameubank@gmail.com"
@@ -25,19 +25,19 @@
     }
   ],
   "dependencies": {
-    "clean-css": "*",
-  	"codemirror": "*",
-    "coffee-script": "*",
-    "colors": "*",
-    "tracer": "*",
-    "express": "*",
-    "socket.io": "*",
-    "orm": "*",
-    "jade": "*",
-    "jymin": "*",
-    "mocha": "*",
-    "should": "*",
-    "uglify-js": "*"
+    "clean-css": "2.0.7",
+  	"codemirror": "3.21.0",
+    "coffee-script": "1.7.1",
+    "colors": "0.6.2",
+    "tracer": "0.6.2",
+    "express": "3.4.8",
+    "socket.io": "0.9.16",
+    "orm": "2.1.3",
+    "jade": "1.1.5",
+    "jymin": "0.0.3",
+    "mocha": "1.17.1",
+    "should": "3.1.2",
+    "uglify-js": "2.4.12"
   },
   "devDependencies": {
   },
