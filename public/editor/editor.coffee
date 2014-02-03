@@ -96,7 +96,7 @@ gotFile = (json, isInitialLoad) ->
 	processEditorChange = (change) ->
 		if change.origin is 'io'
 			return
-		log change
+
 		from = 0
 		to = change.from.line - 1
 		if to > -1
@@ -104,12 +104,17 @@ gotFile = (json, isInitialLoad) ->
 				from += editor.doc.getLine(i).length + 1
 		from += change.from.ch
 		text = removed = ''
-		text += change.text.join '\n'
-		removed += change.removed.join '\n'
 
-		if change.next
-			# TODO: Apply a transformation to the next change.
-			processEditorChange change.next
+		while change
+			text += change.text.join '\n'
+			removed += change.removed.join '\n'
+			change = change.next
+			if change
+				isAutoIndent = change.from.ch is 0 and /\s/.test change.text
+				if not isAutoIndent
+					# TODO: Apply a transformation to the next change.
+					processEditorChange change
+					break
 
 		edit = [
 			from
