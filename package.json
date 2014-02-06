@@ -1,7 +1,7 @@
 {
 	"name": "radedit",
 	"description": "Collaborative Development framework",
-	"version": "0.0.5",
+	"version": "0.0.4",
 	"author": {
 		"name": "Sam Eubank",
 		"email": "sameubank@gmail.com"
