@@ -196,7 +196,8 @@ ignorePattern = ignorePattern.replace /(^\s|\s+$)/, ''
 ignorePattern = ignorePattern.replace /\./g, '\\.'
 ignorePattern = ignorePattern.replace /\*/g, '.*'
 ignorePattern = ignorePattern.replace /\s+/g, '|'
-ignorePattern += '|.*-MIN\.jade';
+ignorePattern += '|.*-MIN\.jade'
+ignorePattern += '|x'
 ignorePattern = new RegExp "^(#{ignorePattern})$"
 
 
@@ -356,7 +357,7 @@ processFile = (path, content) ->
 
 	# Load modules
 	else
-		if /(coffee|js|json)$/.test path
+		if /(js|coffee|iced)$/.test path
 			# If it's not the first time, we may need to reload or restart.
 			modulePath = if loader.isWindows then path.replace /\//g, '\\' else path
 			module = require.cache[modulePath]

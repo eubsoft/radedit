@@ -326,9 +326,17 @@ if file
 	scrollEditorTo query.x, query.y
 	setEditorSelection query.a, query.h
 
+# When the user navigates, load the file for them.
 bind window, 'popstate', ->
 	rel = getQueryParams().rel
-	if rel isnt currentFile.rel
+
+	# If we're not pointed at a file, hide the indicator and show the tree.
+	if not rel
+		addClass '_LOADING', '_HIDDEN'
+		flipButton ($ '_TREE__BUTTON'), true
+
+	# If the file something new, fetch it.
+	else if rel isnt currentFile.rel
 		fetchFile rel
 
 # Hide the menu when the editor is clicked.
