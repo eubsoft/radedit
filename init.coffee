@@ -12,22 +12,33 @@ shouldContinue = true
 forever = require 'forever'
 script = caller.replace /^.*[\/]/, ''
 command = process.argv[2]
-pidPath = radedit.appPath + '/logs/forever.pid'
+logPath = radedit.appPath + '/logs'
+pidPath = logPath + '/forever.pid'
 
-readPids = (callback) ->
+readPid = (callback) ->
 	fs.readFile pidPath, (err, content) ->
 		if err
-			throw err
-		callback JSON.parse content
+			callback 0
+		else
+			callback '' + content
 
-writePids = (pids) ->
-	fs.writeFile pidPath, JSON.stringify(pids), (err) ->
-		if err
+writePid = (pid) ->
+	fs.mkdir logPath, (err) ->
+		if err and not /EEXIST/.test err
+			radedit.log.warn "Could not create log directory: #{logPath}"
 			throw err
+		fs.writeFile pidPath, pid, (err) ->
+			if err
+				radedit.log.warn "Could not create pid file: #{pidPath}"
+				throw err
 
 tryToKill = (pid) ->
 	try
 		process.kill pid
+
+deletePid = ->
+	fs.unlink pidPath, (err) ->
+		# Ignore error.
 
 if command is 'start'
 	radedit.log "Starting '#{script}' with forever."
@@ -45,33 +56,23 @@ if command is 'start'
 		spawnWith:
 			cwd: radedit.appPath
 			env: process.env
-	readPids (pids) ->
-		tryToKill pids.forever
-		tryToKill pids.app
-		writePids
-			forever: process.pid
+	readPid (pid) ->
+		tryToKill pid
+		writePid process.pid	
 	shouldContinue = false
 
 else if command is 'stop'
 	radedit.log "Stopping '#{script}' with forever."
-	readPids (pids) ->
-		tryToKill pids.forever
-		tryToKill pids.app
+	readPids (pid) ->
+		tryToKill pid
+		deletePid()
 	shouldContinue = false
 
 else if command
 	radedit.error "Unrecognized command: #{command}"
 
 
-
 if shouldContinue
-
-	# Update the process ID for the app.
-	readPids (pids) ->
-		# Kill the other app process if there is one.
-		tryToKill pids.app
-		pids.app = process.pid
-		writePids pids
 
 	configPath = "#{radedit.appPath}/config/config.json"
 	try

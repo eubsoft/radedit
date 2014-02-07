@@ -65,23 +65,23 @@ module.exports =
 					"Next steps"
 					Array(41).join("-")
 					"\u279C Go to your app directory:".grey
-					"  cd #{appName}"
+					"	cd #{appName}"
 					" "
 					"\u279C Start your app (with forever):".grey
-					"  node app start &"
+					"	node app start &"
 					" "
 					"\u279C Configure your app:".grey
-					"  http://localhost:1337/radedit/config".blue
+					"	http://localhost:1337/radedit/config".blue
 					" "
 					" "
 					"Thank you for using RadEdit! \u263A"
 					Array(41).join("-")
 					"<limerick>".grey
-					"  There once was an app with RadEdit."
-					"  Collaborative editing sped it."
-					"  Release time was snappy."
-					"  The users were happy."
-					"  And engineers got massive credit."
+					"	There once was an app with RadEdit."
+					"	Collaborative editing sped it."
+					"	Release time was snappy."
+					"	The users were happy."
+					"	And engineers got massive credit."
 					"</limerick>".grey
 					" "
 				]

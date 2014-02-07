@@ -88,7 +88,7 @@ gotFile = (json, isInitialLoad) ->
 
 	editor.on 'beforeChange', (cm, change) ->
 		for text, i in change.text
-			change.text[i] = text.replace '  ', '\t'
+			change.text[i] = text.replace '	', '\t'
 
 	editor.on 'change', (cm, change) ->
 		processEditorChange change

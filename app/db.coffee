@@ -3,7 +3,7 @@ radedit = require 'radedit'
 config = radedit.config
 log = radedit.log
 
-global.db  = orm.connect config.db
+global.db	= orm.connect config.db
 if not db.models
 	db.models = {}
 

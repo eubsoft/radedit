@@ -1,7 +1,7 @@
 {
 	"name": "radedit",
-	"description": "Collaborative Development framework",
-	"version": "0.0.4",
+	"description": "Collaborative Development Framework",
+	"version": "0.0.6",
 	"author": {
 		"name": "Sam Eubank",
 		"email": "sameubank@gmail.com"
@@ -39,23 +39,26 @@
 		"tracer": "0.6.2",
 		"uglify-js": "2.4.12"
 	},
-	"devDependencies": {
-	},
+	"devDependencies": {},
 	"keywords": [
-		"rad",
-		"edit",
-		"collaborative",
-		"editor",
-		"cloud",
-		"ide",
-		"socket",
-		"refresh"
+		"rad", "edit",
+		"collaborative", "editor",
+		"mvc", "framework",
+		"cloud", "ide",
+		"socket", "refresh",
+		"rapid", "application", "development",
+		"fast", "app", "dev",
+		"low", "latency",
+		"instant", "gratification"
 	],
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/eubsoft/radedit"
 	},
-	"main": "index",
+	"main": "./index.js",
+	"bin": {
+		"radedit": "./bin/radedit.js"
+	},
 	"engines": {
 		"node": "*"
 	},
