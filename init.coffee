@@ -63,7 +63,7 @@ if command is 'start'
 
 else if command is 'stop'
 	radedit.log "Stopping '#{script}' with forever."
-	readPids (pid) ->
+	readPid (pid) ->
 		tryToKill pid
 		deletePid()
 	shouldContinue = false

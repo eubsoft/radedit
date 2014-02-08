@@ -1,8 +1,3 @@
-require('coffee-script');
-try {
-	require('coffee-script/register');	
-}
-catch (e) {
-	// TODO: Nag to update CoffeeScript.
-}
+var coffee = require('coffee-script');
+if (coffee.register) coffee.register();
 require('./init');

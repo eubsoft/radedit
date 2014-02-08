@@ -7,6 +7,7 @@ log = radedit.log
 
 app = module.exports = express()
 app.use express.cookieParser config.cookieSecret
+app.use express.compress()
 app.use radedit.auth
 app.use app.router
 
