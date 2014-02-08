@@ -4,7 +4,6 @@ The loader module recursively loads directory contents.
 
 # External dependencies.
 fs = require 'fs'
-jade = require 'jade'
 events = require 'events'
 coffee = require 'coffee-script'
 uglify = require 'uglify-js'
@@ -19,6 +18,7 @@ appPath = radedit.appPath
 io = radedit.io
 log = radedit.log
 search = radedit.search
+templater = radedit.templater
 
 APP_RESTART_DELAY = 10
 CLIENT_REFRESH_DELAY = 50
@@ -303,6 +303,7 @@ lintFile = (path, content, callback) ->
 			doLinting err, content
 			decrementWaitingCount()
 
+templateExtensionPattern = /\.(jade)$/
 
 loader.processFile =
 processFile = (path, content) ->
@@ -310,8 +311,8 @@ processFile = (path, content) ->
 	if expandPublics[path] or publicPattern.test rel
 		loadPublic path, content
 
-	# Load jade views for the server.
-	else if getExtension(rel) is 'jade'
+	# Load views for the server.
+	else if templateExtensionPattern.test rel
 		# Load dependent views
 		loadView = (name, path, oldView) ->
 			code = if oldView then oldView.code else '' + content
@@ -324,21 +325,18 @@ processFile = (path, content) ->
 				app.get href, (request, response) ->
 					response.view name
 
-			view = jade.compile code, {filename: path}
+			view = templater.compile code, path
 			view.path = path
 			view.code = code
 			view.minified = code
 
 			view.afterShrunk = ->
-				minPath = path.replace /\.jade$/, '-MIN.jade'
+				minPath = path.replace templateExtensionPattern, '-MIN.$1'
 				minCode = view.minified.replace /(include|extends) (\S+)/g, '$1 $2-MIN'
 				fs.writeFile minPath, minCode, (err) ->
 					if err
 						throw err
-					view.min = jade.compile minCode, {filename: minPath}
-					#fs.unlink minPath, (err) ->
-					#	if err
-					#		throw err
+					view.min = templater.compile minCode, minPath
 
 			loader.views[name] = view
 

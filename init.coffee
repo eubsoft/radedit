@@ -85,7 +85,7 @@ if shouldContinue
 		else if /Cannot find module/.test message
 			radedit.log.warn "No config found at #{configPath}"	
 
-	modules = ['log', 'auth', 'app', 'io', 'db', 'shrinker', 'search', 'loader']
+	modules = ['log', 'auth', 'app', 'io', 'db', 'shrinker', 'templater', 'search', 'loader']
 	modules.forEach (name) ->
 		radedit[name] = require './app/' + name
 
