@@ -1,6 +1,0 @@
-*.log
-*.out
-*.pid
-*-MIN.jade
-logs
-node_modules
