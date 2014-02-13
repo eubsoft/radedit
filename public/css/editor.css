@@ -6,8 +6,120 @@
 html {
 	height: 100%;
 	background: #000;
-	font: normal 12px Arial;
+	color: #fff;
 	overflow: hidden;
+	font-family: Arial;
+	font-size: 12px;
+}
+
+html, th, td {
+	
+}
+
+#_LOGO {
+	margin: 0.2em;
+}
+
+h1 {
+	position: absolute;
+	left: 2em;
+	top: 0.4em;
+	color: #25b;
+	text-shadow: 0.1em 0.1em #000;
+	font-size: 13px;
+}
+
+h1 b {
+	color: #c70;
+}
+
+body._MANAGER #_CONTENT {
+	padding: 1em 2.2em;
+}
+
+input._CELL {
+	background: #222;
+	border: 1px solid #444;
+	color: #fff;
+	border-radius: 0.2em;
+	margin: -0.1em -0.2em;
+	padding: 0.1em 0.2em;
+}
+
+input._CELL:focus {
+	background: #fff;
+	color: #000;
+}
+
+input#name {
+	width: 10em;
+}
+
+input#port {
+	width: 4em;
+}
+
+td._CONTROLS {
+	padding: 0 0.2em;
+}
+
+i._CONTROL {
+	display: inline-block;
+	width: 20px;
+	height: 20px;
+	margin: 0.1em 0.3em;
+	cursor: pointer;
+}
+
+i._CONTROL:hover {
+	filter: brightness(1.5);
+	-webkit-filter: brightness(1.5);
+	-moz-filter: brightness(1.5);
+	-o-filter: brightness(1.5);
+	-ms-filter: brightness(1.5);
+}
+
+h2 {
+	font-weight: normal;
+	font-size: 16px;
+	margin: 0 0 0.4em;
+	color: #999;
+}
+
+h2 b {
+	font-weight: normal;
+	font-size: 13px;
+	color: #666;
+}
+
+table {
+	border-spacing: 1px;
+	margin: -1px;
+}
+
+th,
+td {
+	padding: 0.3em 0.6em;
+}
+
+th {
+	background: #333;
+	text-align: left;
+	font-weight: bold;
+}
+
+td {
+	background: #111;
+}
+
+a {
+	color: #25b;
+	text-decoration: none;
+	cursor: pointer;
+}
+
+a:hover {
+	color: #c70;
 }
 
 #_NAV {
@@ -143,7 +255,8 @@ div._ITEM:hover {
 	cursor: pointer;
 }
 
-i._PLUS, i._FOLDER, i._FILE {
+#_TREE i._FOLDER,
+i._PLUS, i._FILE {
 	display: inline-block;
 	width: 1.6em;
 	height: 1.6em;

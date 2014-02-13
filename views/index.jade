@@ -1,0 +1,25 @@
+doctype html
+html
+	head
+		title RadEdit
+		link(rel="stylesheet", href="/core.#{vTag}.css")
+		link(rel="shortcut icon", href="/favicon.#{vTag}.ico")
+		meta(
+			name="viewport",
+			content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no")
+
+	body._MANAGER
+		#_NAV
+			#_LOGO
+			h1 Rad<b>Edit</b>
+		#_CONTENT
+			h2 Apps <b>&nbsp; #{appPath}</b>
+			p
+				table#_APPS
+					tr
+						th Name
+						th Port
+						th Controls
+
+		script var apps=!{apps}
+		script(src="/core.#{vTag}.js")

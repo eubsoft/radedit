@@ -1,15 +1,16 @@
 doctype html
 html
 	head
-		title Code
-		link(rel="stylesheet", href="/radedit.#{vTag}.css")
+		title Editor
+		link(rel="stylesheet", href="/core.#{vTag}.css")
 		link(rel="shortcut icon", href="/favicon.#{vTag}.ico")
 		meta(
 			name="viewport",
 			content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no")
 
-	body
+	body._EDITOR
 		#_NAV
+			#_SEARCH_BOX
 		#_CONTENT
 			#_MENU._AREA
 				div
@@ -26,4 +27,5 @@ html
 		#_LOADING: span Loading...
 		if file
 			script var file=!{file}
-		script(src="/radedit.#{vTag}.js")
+
+		script(src="/core.#{vTag}.js")

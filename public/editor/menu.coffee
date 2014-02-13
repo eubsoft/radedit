@@ -7,10 +7,10 @@ menuToggles =
 
 createMenuToggle = (key, value) ->
 	$element = $ value
-	$element.checked = getCookie key
-	
-	bind $element, 'click', ->
-		setCookie key, valueOf $element
+	if $element
+		$element.checked = getCookie key
+		bind $element, 'click', ->
+			setCookie key, valueOf $element
 
 
 for own key, value of menuToggles

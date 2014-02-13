@@ -188,7 +188,7 @@ doSetEditorUrl = (shouldPushHistory) ->
 	x = forceNumber doc.scrollLeft
 	y = forceNumber doc.scrollTop
 	href = location.protocol + '//' + location.host
-	href += "/radedit?rel=#{currentFile.rel}"
+	href += "/edit?rel=#{currentFile.rel}"
 	href += "&x=#{x}&y=#{y}"
 	if anchor
 		href += '&a=' + "#{anchor.line},#{anchor.ch}"

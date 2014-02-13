@@ -115,60 +115,15 @@ modulesPattern = /^.*[\/\\]node_modules[\/\\]/
 publicPattern = /(^|[\/\\])public[\/\\]/
 viewsPattern = /(^|[\/\\])views[\/\\]/
 
-moduleRoot = __dirname.replace /[\/\\]app$/, ''
+moduleRoot = __dirname.replace /[\/\\]modules$/, ''
 moduleRoot = moduleRoot.replace /\\/g, '/'
 publicRel = getRel moduleRoot + '/public'
 
-radeditPublic =
-	"/radedit.css": [
-		"css/editor.css"
-		"css/codemirror.css"
-	],
-	"/radedit.js": [
-		"npm jymin src/closure_head.js"
-		"npm jymin src/logging.js"
-		"npm jymin src/strings.js"
-		"npm jymin src/numbers.js"
-		"npm jymin src/url.js"
-		"npm jymin src/collections.js"
-		"npm jymin src/cookies.js"
-		"npm jymin src/dom.js"
-		"npm jymin src/events.js"
-		"npm jymin src/forms.js"
-		"npm jymin src/ajax.js"
-		"npm jymin src/history.js"
-		"npm jymin src/md5.js"
-		"npm jymin src/dates.js"
-		"npm jymin src/socket.js"
-		"npm jymin src/dollar.js"
-		"npm codemirror lib/codemirror.js"
-		"npm codemirror mode/coffeescript/coffeescript.js"
-		"npm codemirror mode/css/css.js"
-		"npm codemirror mode/jade/jade.js"
-		"npm codemirror mode/javascript/javascript.js"
-		"editor/storage.coffee"
-		"editor/icons.coffee"
-		"editor/key_bindings.coffee"
-		"editor/nav.coffee"
-		"editor/menu.coffee"
-		"editor/tree.coffee"
-		"editor/console.coffee"
-		"editor/search.coffee"
-		"editor/editor.coffee"
-		"npm jymin src/closure_foot.js"
-	]
 
 
 expandPublics = ->
 
-	for href, components of radeditPublic
-		for componentRel, index in components
-			parts = componentRel.split ' '
-			if parts[0] isnt 'npm'
-				components[index] = publicRel + '/' + componentRel
-		config.public[href] = components
-
-	for href, components of config.public
+	for href, components of config.publics
 		for componentRel, index in components
 			parts = componentRel.split ' '
 			if parts[0] is 'npm'
@@ -179,9 +134,9 @@ expandPublics = ->
 						loader.loadFile path
 				scheduleLoading path
 				components[index] = getRel path
-		config.public[href] = components
+		config.publics[href] = components
 
-config.public = config.public or {}
+config.publics = config.publics or {}
 expandPublics()
 
 
@@ -197,7 +152,8 @@ ignorePattern = ignorePattern.replace /\./g, '\\.'
 ignorePattern = ignorePattern.replace /\*/g, '.*'
 ignorePattern = ignorePattern.replace /\s+/g, '|'
 ignorePattern += '|.*-MIN\.jade'
-ignorePattern += '|x'
+ignorePattern += '|\.git'
+ignorePattern += '|boilerplates'
 ignorePattern = new RegExp "^(#{ignorePattern})$"
 
 
@@ -274,8 +230,10 @@ refreshClients = (changed) ->
 
 
 restartApp = (path) ->
-	log.warn "Restarting app for change in #{path}"
-	setTimeout process.exit, APP_RESTART_DELAY
+	log.warn "Stopping app for change in #{path}"
+	setTimeout ->
+		process.exit()
+	, APP_RESTART_DELAY
 
 
 loadModule = (path) ->
@@ -480,7 +438,7 @@ loadPublic = (path, content) ->
 
 compilePublic = (group) ->
 	extension = getExtension group
-	files = config.public[group]
+	files = config.publics[group]
 	code = ''
 	for file in files
 		asset = loader.public.assets[file]
@@ -521,7 +479,7 @@ routePublic = (href, assetKey) ->
 
 
 mapPublicAssets = ->
-	groups = config.public
+	groups = config.publics
 	for group, files of groups
 		for file in files
 			list = loader.public.parents[file]

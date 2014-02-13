@@ -3,11 +3,20 @@
 $nav = $ '_NAV'
 
 # Populate the nav.
-navButtons = ['_MENU', '_TREE', '_CONSOLE', '_SAVE']
-for key in navButtons
-	extra = if key is 'save' then '._DISABLED' else '._TOGGLE'
-	$item = addElement $nav, 'div#' + key + '__BUTTON._NAV' + extra
-	setHtml $item, icons[key]
+section = getClass document.body
+
+if section is '_EDITOR'
+
+	navButtons = ['_MENU', '_TREE', '_CONSOLE', '_SAVE']
+
+	for key in navButtons
+		$item = addElement $nav, 'div#' + key + '__BUTTON._NAV._TOGGLE'
+		setHtml $item, icons[key]
+
+else if section is '_MANAGER'
+
+	setHtml '_LOGO', icons._RADEDIT
+
 
 # Last button to be clicked.
 $lastClickedButton = null
@@ -50,7 +59,7 @@ showConnectionStatus = (status) ->
 	# TODO: Make the nav button (or something) show yellow or red when the connection is broken.
 
 # TODO: User preferences.
-$avatar = addElement $nav, 'img#_AVATAR'
+#$avatar = addElement $nav, 'img#_AVATAR'
 #$avatar.src = 'http://gravatar.com/avatar/4a4c0726ea748003742f5d5dbd1cbad1?s=40'
 
 enableSaveButton false

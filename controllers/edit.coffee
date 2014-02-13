@@ -12,10 +12,10 @@ VERSION_INDEX = 3
 EDIT_INDEX = 4
 AUTO_SAVE_INDEX = 5
 
-app.get '/radedit', (request, response) ->
+app.get '/edit', (request, response) ->
 	rel = request.query.rel
 	respond = (file) ->
-		response.view 'radedit/editor', {file: file}
+		response.view 'editor', {file: file}
 	if rel?
 		getFile rel, (file) ->
 			v = file.version
@@ -219,6 +219,9 @@ io.connect (socket) ->
 	process.on 'radedit:log', (lines) ->
 		socket.emit 'radedit:log', lines
 
+# TODO: Kill process log listeners when a socket disconnects.
+# TODO: Make the number of max listeners configurable.
+process.setMaxListeners 1e3
 
 
 socketEmit = (client, tag, json) ->

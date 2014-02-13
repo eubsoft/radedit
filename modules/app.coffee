@@ -1,6 +1,12 @@
+###
+The app module configures and starts an express application.
+###
+
+# External dependencies.
 express = require 'express'
 http = require 'http'
 
+# RadEdit dependencies.
 radedit = require 'radedit'
 config = radedit.config
 log = radedit.log
@@ -43,7 +49,11 @@ http.ServerResponse.prototype.view = (viewName, context) ->
 	if view
 		if request.cookies.debug
 			context.vTag = 'debug'
-			@send (view) context
+			@end (view) context
 		else
 			context.vTag = radedit.loader.vTag
-			@send (view.min or view) context
+			@end (view.min or view) context
+	else
+		message = "View not found: #{viewName}"
+		@end {error: message}
+		log.error message
