@@ -14,12 +14,12 @@ html
 			h1 Rad<b>Edit</b>
 		#_CONTENT
 			h2 Apps <b>&nbsp; #{appPath}</b>
-			p
-				table#_APPS
-					tr
-						th Name
-						th Port
-						th Controls
+			table#_APPS
+				tr
+					th Name
+					th Port
+					th Controls
+			button#_CREATE_APP Create an App
 
 		script var apps=!{apps}
 		script(src="/core.#{vTag}.js")

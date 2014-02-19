@@ -1,5 +1,103 @@
+doctype html
 html
 	head
-		title Config
-	body
-		div This page will allow a user to configure their app.
+		title RadEdit
+		link(rel="stylesheet", href="/core.#{vTag}.css")
+		link(rel="shortcut icon", href="/favicon.#{vTag}.ico")
+		meta(
+			name="viewport",
+			content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no")
+
+	body._MANAGER
+		#_NAV
+			#_LOGO
+			h1 Rad<b>Edit</b>
+		#_CONTENT
+			h2#_CONFIG_HEADING
+			form#_CONFIG_FORM
+				fieldset
+					legend Setup
+					ul
+						li
+							label Name
+							input(name="name",style="width:10em")
+						li
+							label Port
+							input(name="port",style="width:3em")
+						li
+							label Globals
+							input(name="globals",style="width:16em")
+				fieldset
+					legend Languages &amp; Libraries
+					ul
+						li
+							label Configuration
+							select(name="configLanguage")
+								option CoffeeScript
+								option JavaScript
+								option JSON
+						li
+							label Scripting
+							select(name="scriptingLanguage")
+								option CoffeeScript
+								option JavaScript
+						li
+							label Templating
+							select(name="templateEngine")
+								option doT
+								option EJS
+								option Handlebars
+								option Jade
+								option Underscore
+						li
+							label Front End
+							select(name="frontEndLibrary")
+								option dojo
+								option extJS
+								option jQuery
+								option Jymin
+								option YUI
+								option Zepto
+						li
+							label Model View ?
+							select(name="modelViewLibrary")
+								option Angular
+								option Backbone
+								option Ember
+						li
+							label Styling
+							select(name="stylesheetLanguage")
+								option Less
+								option Sass
+						li
+							label User Interface
+							select(name="uiFramework")
+								option Bootstrap
+								option jQuery UI
+				fieldset
+					legend Editor
+					ul
+						li
+							label Whitespace
+							select(name="whitespace")
+								option tabs
+								option spaces
+						li
+							label Tab Width
+							select(name="tabWidth")
+								option 2
+								option 4
+								option 8
+						li
+							label Theme
+							select(name="theme")
+								option RadEdit
+								option SublimeText
+								option Idea
+								option TextMate
+								option Eclipse
+
+			button#_SAVE_CONFIG
+			br
+		script var app=!{app}
+		script(src="/core.#{vTag}.js")

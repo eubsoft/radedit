@@ -1,5 +1,6 @@
 * {
 	margin: 0;
+	border: 0;
 	padding: 0;
 }
 
@@ -35,20 +36,86 @@ h1 b {
 
 body._MANAGER #_CONTENT {
 	padding: 1em 2.2em;
+	overflow: auto;
 }
 
-input._CELL {
-	background: #222;
-	border: 1px solid #444;
-	color: #fff;
+#_APPS {
+	margin: 0.5em 0;
+}
+
+._SCREEN {
+	display: none;
+}
+
+._ACTIVE {
+	display: block;
+}
+
+a._DISABLED {
+	color: #ccc;
+}
+
+fieldset {
+	padding: 0.4em 0;
+}
+
+form li {
+	clear: both;
+	margin: 0.4em 0;
+	list-style-type: none;
+}
+
+form label {
+	float: left;
+	width: 8em;
+	margin: 0.4em 0;
+}
+
+form legend {
+	display: block;
+	width: 100%;
+	font-size: 1.2em;
+	color: #666;
+	border-bottom: 1px solid #111;
+	padding-top: 0.4em;
+	margin-bottom: -0.2em;
+}
+
+input,
+select,
+textarea {
+	background: #111;
+	border: 1px solid #333;
+	color: #ccc;
 	border-radius: 0.2em;
-	margin: -0.1em -0.2em;
-	padding: 0.1em 0.2em;
+	margin: 0;
+	padding: 0.2em 0.4em;
+	outline: none;
 }
 
-input._CELL:focus {
-	background: #fff;
-	color: #000;
+button {
+	border: 1px solid #292;
+	border-radius: 0.5em;
+	padding: 0.5em 1em;
+	background: #050;
+	color: #fff;
+	font: bold 13px Arial;
+	text-shadow: 0.2em 0.2em #020;
+	cursor: pointer;
+	outline: none;
+}
+
+button:focus {
+	background: #090;
+	border-color: #6f6;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+	border-color: #999;
+	background: #222;
+	color: #fff;
 }
 
 input#name {

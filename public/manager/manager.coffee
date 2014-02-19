@@ -1,5 +1,7 @@
+maxPort = 8000
+
 populateApps = (apps) ->
-	maxPort = 8000
+	setHtml $apps, getHtml getFirstChild $apps
 	forEach apps, (app) ->
 		$row = addElement $apps, 'tr'
 		$row._APP = app
@@ -14,28 +16,21 @@ populateApps = (apps) ->
 		$controls = addElement $row, 'td._CONTROLS'
 		maxPort = Math.max maxPort, app.port
 
-		forEach ['_FOLDER', '_SETTINGS', '_START'], (icon) ->
+		forEach ['_FOLDER', '_CONFIG', '_START'], (icon) ->
 			$icon = addElement $controls, "i.#{icon}._CONTROL"
 			$icon.app = app
 			setHtml $icon, icons[icon]
 		
 		showAppStatus app
 
-	$row = addElement $apps, 'tr'
-	forEach ['name', 'port'], (fieldName) ->
-		$cell = addElement $row, 'td'
-		$input = addElement $cell, "input##{fieldName}._CELL"
-		if fieldName is 'port'
-			valueOf $input, maxPort + 1
-	$cell = addElement $row, 'td._CONTROLS'
-	$icon = addElement $cell, 'i#_ADD._CONTROL'
-	setHtml $icon, icons._ADD
-
 showAppStatus = (app) ->
 	$row = app._ROW
 	$icons = $$ 'i._START', $row
 	$icon = $icons[0]
 	newIcon = if app.isOn then '_STOP' else '_START'
+	$links = $$ 'a', $row
+	$link = $links[0]
+	flipClass $link, '_DISABLED', not app.isOn
 	setHtml $icon, icons[newIcon]
 
 listenForStatus = (status) ->
@@ -71,26 +66,41 @@ delegate $apps, 'i._CONTROL', 'click', ($event, $parent, $icon) ->
 	if hasClass $icon, '_START'
 		action = if app.isOn then 'stop' else 'start'
 		callApp action, (json) ->
-			log json
+			# TODO: Stop loading indicator.
 		app.isOn = not app.isOn
-		log app.isOn
 		showAppStatus app
 
-	else if hasClass $icon, '_SETTINGS'
-		callApp 'config', (json) ->
-			log json
+	else if hasClass $icon, '_CONFIG'
+		window.location = '/config?name=' + escape(app.name)
 
 	else if hasClass $icon, '_FOLDER'
 		window.location = "/edit?app=#{app.name}"
 
-bind '_ADD', 'click', ->
-	name = escape getValue 'name'
-	port = escape getValue 'port'
-	url = "/create?name=#{name}&port=#{port}"
-	getJson url, (json) ->
-		# App created.
+bind '_CREATE_APP', 'click', ->
+	window.location = '/config?port=' + (maxPort + 1)
 
 
-socketOn "radedit:apps", (apps) ->
-	window.apps = apps
-	populateApps apps
+showConfigForm = (config) ->
+	$elements = $configForm.elements
+	forEach $elements, ($element) ->
+		name = $element.name
+		value = config[name]
+		if value and value.join
+			value = value.join ', '
+		valueOf $element, value
+	setText '_CONFIG_HEADING', if config.name then "Configure App: #{config.name}" else "Create App"
+	setText '_SAVE_CONFIG', if config.name then "Save Configuration" else "Save New App"
+
+
+bind '_SAVE_CONFIG', 'click', ->
+	values = []
+	forEach $configForm.elements, ($element) ->
+		if $element.name
+			values.push $element.name + '=' + escape valueOf $element
+	window.location = '/save-config?' + values.join '&'
+
+
+$configForm = $ '_CONFIG_FORM'
+app = window.app
+if app
+	showConfigForm app

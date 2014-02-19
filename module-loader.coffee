@@ -19,7 +19,7 @@ radedit.radeditPath = __dirname
 radedit.stage = process.env.NODE_ENV or 'dev'
 
 logPath = "#{radedit.appPath}/logs"
-configPath = "#{radedit.appPath}/config/config.json"
+configPath = "#{radedit.appPath}/config/config"
 
 
 # RadEdit manager writes a config, so it should be there.
@@ -61,8 +61,8 @@ modules.forEach (name) ->
 
 
 # An optional config array can globalize modules.
-exposeGlobals = radedit.config.exposeGlobals or []
-exposeGlobals.forEach (name) ->
+globals = radedit.config.globals or []
+globals.forEach (name) ->
 
 	# RadEdit modules can be globalized.
 	if radedit[name]

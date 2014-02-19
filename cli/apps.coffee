@@ -5,7 +5,7 @@ radedit = require 'radedit'
 app = radedit.app
 log = radedit.log
 
-App = require '../models/App'
+App = radedit.App = require '../models/App'
 
 apps =
 radedit.apps =
