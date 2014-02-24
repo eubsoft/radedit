@@ -154,6 +154,7 @@ ignorePattern = ignorePattern.replace /\s+/g, '|'
 ignorePattern += '|.*-MIN\.jade'
 ignorePattern += '|\.git'
 ignorePattern += '|boilerplates'
+ignorePattern += '|test'
 ignorePattern = new RegExp "^(#{ignorePattern})$"
 
 
