@@ -24,7 +24,7 @@
       "email": "seanaryana@gmail.com"
     }
   ],
-  "dependencies": {,
+  "dependencies": {
     "assert-plus": "~0.1.5",
     "clean-css": "2.0.7",
     "codemirror": "3.21.0",
