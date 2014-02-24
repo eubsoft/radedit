@@ -2,5 +2,6 @@
 *.out
 *.pid
 *-MIN.jade
+.cache
 logs
 node_modules
