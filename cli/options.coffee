@@ -5,7 +5,7 @@ user to create, configure and start RadEdit applications.
 
 options = module.exports = require 'commander'
 options
-  .option '-p, --port [port]', 'Port from which the RadEdit manager will be served'
+	.option '-p, --port [port]', 'Port from which the RadEdit manager will be served'
 	.option '-r, --root [root]', 'Document root for apps (defaults to current working directory)'
 	.parse process.argv
 

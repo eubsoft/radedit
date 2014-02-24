@@ -1,67 +1,68 @@
 {
-    "name": "radedit",
-    "description": "Collaborative Development Framework",
-    "version": "0.0.6",
-    "author": {
-        "name": "Sam Eubank",
-        "email": "sameubank@gmail.com"
+  "name": "radedit",
+  "description": "Collaborative Development Framework",
+  "version": "0.0.9",
+  "author": {
+    "name": "Sam Eubank",
+    "email": "sameubank@gmail.com"
+  },
+  "contributors": [
+    {
+      "name": "Sam Eubank",
+      "email": "sameubank@gmail.com"
     },
-    "contributors": [
-        {
-            "name": "Sam Eubank",
-            "email": "sameubank@gmail.com"
-        },
-        {
-            "name": "Sean Aryana",
-            "email": "seanaryana@gmail.com"
-        },
-        {
-            "name": "Kaushik Shankar",
-            "email": "skaushik92@gmail.com"
-        },
-        {
-            "name": "Eric Mickelsen",
-            "email": "mickelsen.eric@gmail.com"
-        }
-    ],
-    "dependencies": {
-        "clean-css": "2.0.7",
-        "codemirror": "3.21.0",
-        "coffee-script": "1.7.1",
-        "colors": "0.6.2",
-        "express": "3.4.8",
-        "jade": "1.1.5",
-        "jymin": "0.0.3",
-        "mocha": "1.17.1",
-        "orm": "2.1.3",
-        "should": "3.1.2",
-        "socket.io": "0.9.16",
-        "tracer": "0.6.2",
-        "uglify-js": "2.4.12"
+    {
+      "name": "Kaushik Shankar",
+      "email": "skaushik92@gmail.com"
     },
-    "devDependencies": {},
-    "keywords": [
-        "rad", "edit",
-        "collaborative", "editor",
-        "mvc", "framework",
-        "cloud", "ide",
-        "socket", "refresh",
-        "rapid", "application", "development",
-        "fast", "app", "dev",
-        "low", "latency",
-        "instant", "gratification"
-    ],
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/eubsoft/radedit"
+    {
+      "name": "Eric Mickelsen",
+      "email": "mickelsen.eric@gmail.com"
     },
-    "main": "./index.js",
-    "bin": {
-        "radedit": "./cli.js"
-    },
-    "engines": {
-        "node": "*"
-    },
-    "readmeFilename": "README.md",
-    "homepage": "http://radedit.com"
+    {
+      "name": "Sean Aryana",
+      "email": "seanaryana@gmail.com"
+    }
+  ],
+  "dependencies": {
+    "clean-css": "2.0.7",
+    "codemirror": "3.21.0",
+    "coffee-script": "1.7.1",
+    "commander": "2.1.0",
+    "colors": "0.6.2",
+    "express": "3.4.8",
+    "jade": "1.1.5",
+    "jymin": "0.0.4",
+    "mocha": "1.17.1",
+    "orm": "2.1.3",
+    "should": "3.1.2",
+    "socket.io": "0.9.16",
+    "tracer": "0.6.2",
+    "uglify-js": "2.4.12"
+  },
+  "devDependencies": {},
+  "keywords": [
+    "rad", "edit",
+    "collaborative", "editor",
+    "mvc", "framework",
+    "cloud", "ide",
+    "socket", "refresh",
+    "rapid", "application", "development",
+    "fast", "app", "dev",
+    "low", "latency",
+    "instant", "gratification"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/eubsoft/radedit"
+  },
+  "main": "./index.js",
+  "bin": {
+    "radedit": "./cli.js"
+  },
+  "engines": {
+    "node": "*"
+  },
+  "readmeFilename": "README.md",
+  "homepage": "http://radedit.com"
 }
