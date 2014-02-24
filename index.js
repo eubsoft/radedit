@@ -2,11 +2,8 @@
  * This is the entry point for RadEdit applications.
  */
 
-// Load CoffeeScript because the rest of the app is CS.
-var coffee = require('coffee-script');
+// Add the ability to load CoffeeScript files.
+require('./coffee-setup');
 
-// If on v1.7+, register .coffee as a require-able extension.
-if (coffee.register) coffee.register();
-
-// Load the RadEdit module loader.
+// Load RadEdit modules.
 require('./module-loader');

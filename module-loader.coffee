@@ -30,7 +30,7 @@ try
 catch e
 	# An empty config allows the logger to work.
 	radedit.config = {}
-	radedit.log = require './modules/log'
+	radedit.log = require './lib/log'
 
 	radedit.log.error "Problem parsing config at #{configPath}"
 	radedit.log.error e.message
@@ -51,11 +51,12 @@ modules = [
 	'shrinker',
 	'templater',
 	'search',
-	'loader']
+	'loader',
+	'error404']
 
 # Each module becomes a property of the "radedit" package.
 modules.forEach (name) ->
-	radedit[name] = require './modules/' + name
+	radedit[name] = require './lib/' + name
 	if name is 'log'
 		radedit.log.info "Starting application from #{radedit.appPath}"
 

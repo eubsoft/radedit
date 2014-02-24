@@ -172,7 +172,6 @@ loadFiles = (path) ->
 
 # Load all files
 process.nextTick ->
-	loadFiles moduleRoot
 	loadFiles appPath
 
 
@@ -369,7 +368,6 @@ walk = (dir, fileCallback, dirCallback) ->
 						fileCallback path, stat
 					decrementWaitingCount()
 		decrementWaitingCount()
-
 
 loader.public =
 	assets: {}
