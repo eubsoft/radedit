@@ -236,9 +236,11 @@ module.exports = class App
 				else
 					callback err
 
+		# TODO: Replace this with a walk mechanism like the loader.
 		queue = [
 			''
 			'_.gitignore'
+			'_.radignore'
 			'app'
 			'app.js'
 			'config'
@@ -248,6 +250,7 @@ module.exports = class App
 			'models'
 			'public'
 			'views'
+			'views/error404.jade' # TODO: Allow for other template engines.
 		]
 
 		dequeue = ->
