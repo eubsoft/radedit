@@ -142,10 +142,11 @@ expandPublics()
 
 modifiedTimes = {}
 
+ignorePattern = '. '
 try
-	ignorePattern = '.\n' + fs.readFileSync appPath + '/.gitignore'
+	ignorePattern += fs.readFileSync appPath + '/.radignore'
 catch e
-	ignorePattern = ''
+	ignorePattern += '*-MIN.jade .cache .git boilerplates logs node_modules test'
 
 ignorePattern = ignorePattern.replace /(^\s|\s+$)/, ''
 ignorePattern = ignorePattern.replace /\./g, '\\.'
@@ -153,7 +154,8 @@ ignorePattern = ignorePattern.replace /\*/g, '.*'
 ignorePattern = ignorePattern.replace /\s+/g, '|'
 ignorePattern += '|.*-MIN\.jade'
 ignorePattern += '|\.git'
-ignorePattern += '|boilerplates'
+ignorePattern += '|\.cache'
+ignorePattern += '|node_modules'
 ignorePattern += '|test'
 ignorePattern = new RegExp "^(#{ignorePattern})$"
 

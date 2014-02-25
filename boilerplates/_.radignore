@@ -1,8 +1,7 @@
-*.log
-*.out
-*.pid
 *-MIN.jade
 .cache
+.git
+boilerplates
 logs
 node_modules
 test
