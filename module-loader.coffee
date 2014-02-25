@@ -76,3 +76,8 @@ globals.forEach (name) ->
 			global[name] = globalModule
 		catch e
 			radedit.log.warn "Module '#{name}' cannot be exposed because it is not installed."
+
+
+pidFilePath = "#{logPath}/app.pid"
+fs.mkdir logPath, (err) ->
+	fs.writeFile pidFilePath, process.pid, (err) ->

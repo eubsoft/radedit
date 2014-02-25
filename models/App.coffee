@@ -3,23 +3,55 @@ http = require 'http'
 spawn = require('child_process').spawn
 
 radedit = require 'radedit'
-log = radedit.log
+log = require 'radedit/lib/log'
 
+STARTUP_GRACE_PERIOD = 1e4
+MONITOR_PING_DELAY = 1e3
 
+###
+An app is managed by RadEdit.
+###
 module.exports = class App
 
-
+	###
+	Create the app and start monitoring it.
+	###
 	constructor: (@name, @config) ->
+		root = process.radeditRoot
+		@path = "#{root}/#{@name}"
 		@config = @config or @readConfig()
 		@port = @config.port or @config.port = 8000
 		portSuffix = if @port is 80 then "" else ":#{@port}"
 		@baseUrl = "http://localhost#{portSuffix}"
+
+		# Assume the app is off before we've checked it.
+		@isOn = @stayOn = false
+		@pid = null
+		@pidPath = "#{@path}/logs/app.pid"
+
+		# Try to read the pid file for the app.
+		fs.readFile @pidPath, (err, content) =>
+			if not err
+				pid = ('' + content) * 1
+
+				# Send a test kill signal to check if the app is running.
+				try
+					process.kill pid, 0
+					@pid = pid
+					@isOn = @stayOn = true
+					log "App #{@name} is running with PID #{pid} from a previous invocation."
+	
+				# If the app left a pid file behind, it wants to be running.
+				catch
+					log "App #{@name} died with PID #{pid} and will be restarted."
+					@start()
+
+		# Whether the app is on or not, monitor it via ping.
 		@monitor()
 
 
 	readConfig: =>
-		root = process.radeditRoot
-		path = "#{root}/#{@name}/config/config"
+		path = "#{@path}/config/config"
 		try
 			return require path
 		catch
@@ -34,7 +66,7 @@ module.exports = class App
 			JSON: 'json'
 		extension = extensions[configLanguage]
 		root = process.radeditRoot
-		path = "#{root}/#{@name}/config/config.#{extension}"
+		path = "#{@path}/config/config.#{extension}"
 		fs.unlink path, =>
 			if config.globals
 				config.globals = config.globals.split /[^a-z0-9]+/
@@ -53,7 +85,7 @@ module.exports = class App
 			if config.configLanguage isnt 'JSON'
 				text = 'module.exports =\n' + text
 			extension = extensions[config.configLanguage]
-			path = "#{root}/#{@name}/config/config.#{extension}"
+			path = "#{@path}/config/config.#{extension}"
 			text = @applyWhitespace text
 			fs.writeFile path, text, (err) =>
 				if err
@@ -67,70 +99,137 @@ module.exports = class App
 			code = code.replace /\t/g, spaces
 		return code
 
+
+	###
+	Start an app, and keep it running.
+	###
 	start: ->
-		root = process.radeditRoot
-		path = "#{root}/#{@name}"
+		# Delay monitoring to allow for startup time.
+		@stayOn = false
+		setTimeout ->
+			@stayOn = true
+		, STARTUP_GRACE_PERIOD
+
+		# Spawn the child process.
 		@process = spawn 'node', ['app'],
-			cwd: path
+			cwd: @path
+
 		@isOn = true
+		radedit.log "Started app #{@name} at #{@baseUrl}"
+
+		# If the app dies, we can restart it.
 		@process.on 'exit', =>
+			log "Process for app #{@name} exited."
 			@isOn = false
 			@process = null
+			if @stayOn
+				@start()
 
+		@process.on 'close', =>
+			log "Process for app #{@name} closed."
 
+	###
+	Stop an app if there's a running process or a pid.
+	###
 	stop: ->
+		@stayOn = stopped = false
+
 		if @process
-			@isOn = false
 			@process.kill()
+			stopped = true
+		else if @pid
+			try
+				process.kill @pid
+				stopped = true
+
+		if stopped
+			radedit.log "Stopped app #{@name} at #{@baseUrl}"
+
+		@isOn = false
+		@pid = @process = null
+		fs.unlink @pidPath, ->
 
 
+	###
+	Monitor the app by pinging it.
+	###
 	monitor: ->
 		pingTimeout = null
+
+		# When a ping has finished, process the success or failure.		
 		finishPing = (isOn) =>
+
+			# If we got a response, we don't want to think we timed out.
 			clearTimeout pingTimeout
+
+			# Set the app's status to on or off.
 			@setStatus isOn
-			pingTimeout = setTimeout ->
-				startPing()
-			, 1e3
+
+			# If an app is running, we want it to stay running.
+			if isOn
+				@stayOn = true
+
+			# If an app was supposed to stay running and it's not, start it.
+			if @stayOn and not isOn
+				log.warn "App #{@name} stopped unexpectedly."
+				@start()
+
+			# If we can't listen to the process directly, keep pinging it.
+			if not @process
+				pingTimeout = setTimeout ->
+					startPing()
+				, MONITOR_PING_DELAY
+				
+		# Ping an app and either get a response or an error.
 		startPing = =>
 			url = "#{@baseUrl}/ping"
 			request = http.get url, (response) =>
 				finishPing true
 			request.on 'error', =>
 				finishPing false
+
+		# Start monitoring.
 		startPing()
 
 
+	###
+	Set an application's status to on or off, depending on whether it is known to be running.
+	###
 	setStatus: (isOn) ->
 		if @isOn isnt isOn
 			status = if isOn then "running" else "stopped"
+			# TODO: Display a more appropriate ping failure message.
 			log "App #{@name} is #{status} at #{@baseUrl}"
 		@isOn = isOn
 
 
+	###
+	Create a new app via factory method.
+	###
 	@make: (config, callback) ->
 		newApp = null
 		name = config.name
 		root = process.radeditRoot
+		appPath = "#{root}/#{name}"
 		boilerplatesPath = "#{radedit.radeditPath}/boilerplates"
 		log "Creating app #{name}"
 
-		cp = (rel, callback) ->
+		cp = (rel, callback) =>
 			source = "#{boilerplatesPath}/#{rel}"
 			reader = fs.createReadStream source
-			destination = "#{root}/#{name}/#{rel}".replace /\/_/, '/'
+			destination = "#{appPath}/#{rel}".replace /\/_/, '/'
 			writer = fs.createWriteStream destination
-			# log "Copying #{source} to #{destination}"
+			log.trace "Copying #{source} to #{destination}"
 			reader.on 'error', ->
-				console.log "Could not read '#{source}'."
+				log.error "Could not read '#{source}'."
 			writer.on 'error', ->
-				console.log "Could not write '#{destination}'."
+				log.error "Could not write '#{destination}'."
 			writer.on 'close', callback
 			reader.pipe writer
 
-		mkdir = (rel, callback) ->
-			path = "#{root}/#{name}/#{rel}"
-			# log "Making directory #{path}"
+		mkdir = (rel, callback) =>
+			path = "#{appPath}/#{rel}"
+			log.trace "Making directory #{path}"
 			fs.mkdir path, (err) ->
 				if err and err.code isnt 'EEXIST'
 					console.log "Could not create directory '#{path}'."

@@ -27,11 +27,11 @@ showAppStatus = (app) ->
 	$row = app._ROW
 	$icons = $$ 'i._START', $row
 	$icon = $icons[0]
-	newIcon = if app.isOn then '_STOP' else '_START'
 	$links = $$ 'a', $row
 	$link = $links[0]
 	flipClass $link, '_DISABLED', not app.isOn
-	setHtml $icon, icons[newIcon]
+	removeClass $icon, '_SPIN'
+	setHtml $icon, if app.isOn then icons._STOP else icons._START
 
 listenForStatus = (status) ->
 	socketOn "radedit:#{status}", (appName) ->
@@ -65,10 +65,10 @@ delegate $apps, 'i._CONTROL', 'click', ($event, $parent, $icon) ->
 
 	if hasClass $icon, '_START'
 		action = if app.isOn then 'stop' else 'start'
-		callApp action, (json) ->
-			# TODO: Stop loading indicator.
+		setHtml $icon, icons._LOADING
+		addClass $icon, '_SPIN'
 		app.isOn = not app.isOn
-		showAppStatus app
+		callApp action, (json) ->
 
 	else if hasClass $icon, '_CONFIG'
 		window.location = '/config?name=' + escape(app.name)

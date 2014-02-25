@@ -18,12 +18,12 @@ html, th, td {
 }
 
 #_LOGO {
-	margin: 0.2em;
+	margin: 0.2em 0.6em;
 }
 
 h1 {
 	position: absolute;
-	left: 2em;
+	left: 2.4em;
 	top: 0.4em;
 	color: #25b;
 	text-shadow: 0.1em 0.1em #000;
@@ -144,6 +144,33 @@ i._CONTROL:hover {
 	-moz-filter: brightness(1.5);
 	-o-filter: brightness(1.5);
 	-ms-filter: brightness(1.5);
+}
+
+._SPIN {
+  -webkit-animation: _SPIN 2s infinite linear;
+  -moz-animation: _SPIN 2s infinite linear;
+  -o-animation: _SPIN 2s infinite linear;
+  animation: _SPIN 2s infinite linear;
+}
+@-moz-keyframes _SPIN {
+	0% { -moz-transform: rotate(0deg); }
+	100% { -moz-transform: rotate(359deg); }
+}
+@-webkit-keyframes _SPIN {
+	0% { -webkit-transform: rotate(0deg); }
+	100% { -webkit-transform: rotate(359deg); }
+}
+@-o-keyframes _SPIN {
+	0% { -o-transform: rotate(0deg); }
+	100% { -o-transform: rotate(359deg); }
+}
+@-ms-keyframes _SPIN {
+	0% { -ms-transform: rotate(0deg); }
+	100% { -ms-transform: rotate(359deg); }
+}
+@keyframes _SPIN {
+	0% { transform: rotate(0deg); }
+	100% { transform: rotate(359deg); }
 }
 
 h2 {

@@ -231,9 +231,21 @@ refreshClients = (changed) ->
 
 restartApp = (path) ->
 	log.warn "Stopping app for change in #{path}"
-	setTimeout ->
-		process.exit()
-	, APP_RESTART_DELAY
+	stopsRemaining = 0
+	if radedit.apps
+		for own appName, appObject of radedit.apps
+			if appObject.process
+				stopsRemaining++
+				appObject.process.on 'exit', ->
+					stopsRemaining--
+					if stopsRemaining is 0
+						process.exit()
+				appObject.stop()
+	if stopsRemaining is 0
+		setTimeout ->
+			process.exit()
+		, APP_RESTART_DELAY
+
 
 
 loadModule = (path) ->
@@ -368,6 +380,7 @@ walk = (dir, fileCallback, dirCallback) ->
 						fileCallback path, stat
 					decrementWaitingCount()
 		decrementWaitingCount()
+
 
 loader.public =
 	assets: {}
