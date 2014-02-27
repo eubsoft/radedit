@@ -8,10 +8,12 @@ log = require 'radedit/lib/log'
 STARTUP_GRACE_PERIOD = 1e4
 MONITOR_PING_DELAY = 1e3
 
+
 ###
 An app is managed by RadEdit.
 ###
 module.exports = class App
+
 
 	###
 	Create the app and start monitoring it.
@@ -50,6 +52,9 @@ module.exports = class App
 		@monitor()
 
 
+	###
+	Read configuration from the app's config directory.
+	###
 	readConfig: =>
 		path = "#{@path}/config/config"
 		try
@@ -58,6 +63,9 @@ module.exports = class App
 			return {}
 
 
+	###
+	Process a new configuration, and write it to the app's directory.
+	###
 	updateConfig: (config, callback) =>
 		configLanguage = @config.configLanguage or 'JSON'
 		extensions =
@@ -93,6 +101,10 @@ module.exports = class App
 				if callback
 					callback()
 
+
+	###
+	If the app uses spaces instead of tabs, apply spaces.
+	###
 	applyWhitespace: (code) ->
 		if @config.whitespace is 'spaces'
 			spaces = (new Array(@config.tabWidth * 1 + 1)).join ' '
@@ -127,6 +139,7 @@ module.exports = class App
 
 		@process.on 'close', =>
 			log "Process for app #{@name} closed."
+
 
 	###
 	Stop an app if there's a running process or a pid.
@@ -268,3 +281,14 @@ module.exports = class App
 		dequeue()
 
 		newApp = new App name, config
+
+
+	###
+	Delete the app by moving it to the ".deleted" directory.
+	###
+	delete: ->
+		log.warn "Deleting app #{@name}"
+		deleted = "#{process.radeditRoot}/.deleted"
+		fs.mkdir deleted, =>
+			fs.rename @path, "#{deleted}/#{@name}"
+

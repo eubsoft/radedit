@@ -49,6 +49,14 @@ app.get '/save-config', (request, response) ->
 			radedit.apps[name] = App.make config
 	response.redirect '/'
 
+app.get '/delete', (request, response) ->
+	name = request.query.app
+	if name
+		appObject = radedit.apps[name]
+		if appObject
+			appObject.delete()
+			delete radedit.apps[name]
+	response.redirect '/'
 
 getAppList = ->
 	appList = []

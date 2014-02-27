@@ -16,7 +16,7 @@ populateApps = (apps) ->
 		$controls = addElement $row, 'td._CONTROLS'
 		maxPort = Math.max maxPort, app.port
 
-		forEach ['_FOLDER', '_CONFIG', '_START'], (icon) ->
+		forEach ['_START', '_FOLDER', '_CONFIG', '_DELETE'], (icon) ->
 			$icon = addElement $controls, "i.#{icon}._CONTROL"
 			$icon.app = app
 			setHtml $icon, icons[icon]
@@ -51,6 +51,11 @@ if apps
 		start: 'started'
 		stop: 'stopped'
 
+	iconActions =
+		_FOLDER: 'edit'
+		_CONFIG: 'config'
+		_DELETE: 'delete'
+
 	for own action, status of daemonActions
 		listenForStatus status
 
@@ -63,18 +68,19 @@ delegate $apps, 'i._CONTROL', 'click', ($event, $parent, $icon) ->
 		getJson url, (json) ->
 			callback json
 
-	if hasClass $icon, '_START'
+	firstClass = ($icon.className.split ' ')[0]
+
+	if firstClass is '_START'
 		action = if app.isOn then 'stop' else 'start'
 		setHtml $icon, icons._LOADING
 		addClass $icon, '_SPIN'
 		app.isOn = not app.isOn
 		callApp action, (json) ->
 
-	else if hasClass $icon, '_CONFIG'
-		window.location = '/config?name=' + escape(app.name)
-
-	else if hasClass $icon, '_FOLDER'
-		window.location = "/edit?app=#{app.name}"
+	else
+		action = iconActions[firstClass]
+		if action
+			window.location = "/#{action}?app=#{escape(app.name)}"
 
 bind '_CREATE_APP', 'click', ->
 	window.location = '/config?port=' + (maxPort + 1)
