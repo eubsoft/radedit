@@ -33,12 +33,8 @@ showAppStatus = (app) ->
 	removeClass $icon, '_SPIN'
 	setHtml $icon, if app.isOn then icons._STOP else icons._START
 
-listenForStatus = (status) ->
-	socketOn "radedit:#{status}", (appName) ->
-		app = apps[appName]
-		if app
-			app.isOn = status is 'started'
-			showAppStatus app
+
+socketOn "radedit:apps", populateApps
 
 
 apps = window.apps
@@ -46,18 +42,11 @@ $apps = $ '_APPS'
 
 if apps
 	populateApps apps
-	
-	daemonActions =
-		start: 'started'
-		stop: 'stopped'
 
 	iconActions =
 		_FOLDER: 'edit'
 		_CONFIG: 'config'
 		_DELETE: 'delete'
-
-	for own action, status of daemonActions
-		listenForStatus status
 
 
 delegate $apps, 'i._CONTROL', 'click', ($event, $parent, $icon) ->
@@ -87,6 +76,7 @@ bind '_CREATE_APP', 'click', ->
 
 
 showConfigForm = (config) ->
+	config.oldName = config.name
 	$elements = $configForm.elements
 	forEach $elements, ($element) ->
 		name = $element.name

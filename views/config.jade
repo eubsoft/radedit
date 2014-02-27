@@ -15,18 +15,19 @@ html
 		#_CONTENT
 			h2#_CONFIG_HEADING
 			form#_CONFIG_FORM
+				input(type="hidden", name="oldName")
 				fieldset
 					legend Setup
 					ul
 						li
 							label Name
-							input(name="name",style="width:10em")
+							input(name="name", style="width:10em")
 						li
 							label Port
-							input(name="port",style="width:3em")
+							input(name="port", style="width:3em")
 						li
 							label Globals
-							input(name="globals",style="width:16em")
+							input(name="globals", style="width:16em")
 				fieldset
 					legend Languages &amp; Libraries
 					ul

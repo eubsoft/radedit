@@ -67,15 +67,23 @@ module.exports = class App
 	Process a new configuration, and write it to the app's directory.
 	###
 	updateConfig: (config, callback) =>
-		configLanguage = @config.configLanguage or 'JSON'
 		extensions =
 			CoffeeScript: 'coffee'
 			JavaScript: 'js'
 			JSON: 'json'
-		extension = extensions[configLanguage]
-		root = process.radeditRoot
-		path = "#{@path}/config/config.#{extension}"
-		fs.unlink path, =>
+
+		oldConfigExtension = extensions[@config.configLanguage] or 'json'
+		oldConfigPath = "#{@path}/config/config.#{oldConfigExtension}"
+
+		shouldRestart = @stayOn
+		@stop()
+
+		delete radedit.apps[@name]
+		@name = config.name
+		@port = config.port
+		radedit.apps[@name] = @
+
+		fs.unlink oldConfigPath, =>
 			if config.globals
 				config.globals = config.globals.split /[^a-z0-9]+/
 			else
@@ -84,6 +92,7 @@ module.exports = class App
 			for own key, value of config
 				@config[key] = value
 			text = JSON.stringify @config, null, '\t'
+
 			if config.configLanguage is 'CoffeeScript'
 				# TODO: Use a proper Coffee.stringify because this isn't perfect.
 				text = text.replace /([\{\[,]\s+)"([a-z0-9]+)":/ig, '$1$2:'
@@ -92,14 +101,21 @@ module.exports = class App
 				text = text.replace /\n\s*\n/g, '\n'
 			if config.configLanguage isnt 'JSON'
 				text = 'module.exports =\n' + text
-			extension = extensions[config.configLanguage]
-			path = "#{@path}/config/config.#{extension}"
+
+			configExtension = extensions[config.configLanguage]
+			configPath = "#{@path}/config/config.#{configExtension}"
 			text = @applyWhitespace text
-			fs.writeFile path, text, (err) =>
+
+			fs.writeFile configPath, text, (err) =>
 				if err
 					throw err
-				if callback
-					callback()
+				newPath = "#{process.radeditRoot}/#{@config.name}"
+				fs.rename @path, newPath, =>
+					@path = newPath
+					if shouldRestart
+						@start()
+					if callback
+						callback()
 
 
 	###
@@ -116,29 +132,32 @@ module.exports = class App
 	Start an app, and keep it running.
 	###
 	start: ->
-		# Delay monitoring to allow for startup time.
-		@stayOn = false
-		setTimeout ->
-			@stayOn = true
-		, STARTUP_GRACE_PERIOD
+		if not @isOn
 
-		# Spawn the child process.
-		@process = spawn 'node', ['app'],
-			cwd: @path
+			# Delay monitoring to allow for startup time.
+			@stayOn = false
+			setTimeout ->
+				@stayOn = true
+				@monitor()
+			, STARTUP_GRACE_PERIOD
 
-		@isOn = true
-		radedit.log "Started app #{@name} at #{@baseUrl}"
+			# Spawn the child process.
+			@process = spawn 'node', ['app'],
+				cwd: @path
 
-		# If the app dies, we can restart it.
-		@process.on 'exit', =>
-			log "Process for app #{@name} exited."
-			@isOn = false
-			@process = null
-			if @stayOn
-				@start()
+			@isOn = true
+			radedit.log "Started app #{@name} at #{@baseUrl}"
 
-		@process.on 'close', =>
-			log "Process for app #{@name} closed."
+			# If the app dies, we can restart it.
+			@process.on 'exit', =>
+				log "Process for app #{@name} exited."
+				@isOn = false
+				@process = null
+				if @stayOn
+					@start()
+
+			@process.on 'close', =>
+				log "Process for app #{@name} closed."
 
 
 	###
@@ -146,6 +165,7 @@ module.exports = class App
 	###
 	stop: ->
 		@stayOn = stopped = false
+		clearTimeout @monitor.timeout
 
 		if @process
 			@process.kill()
@@ -154,9 +174,11 @@ module.exports = class App
 			try
 				process.kill @pid
 				stopped = true
+			catch
+				log.error "Failed to kill external PID #{@pid} for app #{@name}"
 
 		if stopped
-			radedit.log "Stopped app #{@name} at #{@baseUrl}"
+			log "Stopped app #{@name} at #{@baseUrl}"
 
 		@isOn = false
 		@pid = @process = null
@@ -167,13 +189,12 @@ module.exports = class App
 	Monitor the app by pinging it.
 	###
 	monitor: ->
-		pingTimeout = null
 
 		# When a ping has finished, process the success or failure.		
 		finishPing = (isOn) =>
 
 			# If we got a response, we don't want to think we timed out.
-			clearTimeout pingTimeout
+			clearTimeout @monitor.timeout
 
 			# Set the app's status to on or off.
 			@setStatus isOn
@@ -189,7 +210,7 @@ module.exports = class App
 
 			# If we can't listen to the process directly, keep pinging it.
 			if not @process
-				pingTimeout = setTimeout ->
+				@monitor.timeout = setTimeout ->
 					startPing()
 				, MONITOR_PING_DELAY
 				
@@ -220,17 +241,23 @@ module.exports = class App
 	Create a new app via factory method.
 	###
 	@make: (config, callback) ->
-		newApp = null
 		name = config.name
-		root = process.radeditRoot
-		appPath = "#{root}/#{name}"
-		boilerplatesPath = "#{radedit.radeditPath}/boilerplates"
 		log "Creating app #{name}"
+		root = process.radeditRoot
+		newApp = new App name, config
+		radedit.apps[name] = newApp
+		newApp.populate()
+
+	###
+	Populate the app's directory with boilerplate files.
+	###
+	populate: ->
+		boilerplatesPath = "#{radedit.radeditPath}/boilerplates"
 
 		cp = (rel, callback) =>
 			source = "#{boilerplatesPath}/#{rel}"
 			reader = fs.createReadStream source
-			destination = "#{appPath}/#{rel}".replace /\/_/, '/'
+			destination = "#{@path}/#{rel}".replace /\/_/, '/'
 			writer = fs.createWriteStream destination
 			log.trace "Copying #{source} to #{destination}"
 			reader.on 'error', ->
@@ -241,7 +268,7 @@ module.exports = class App
 			reader.pipe writer
 
 		mkdir = (rel, callback) =>
-			path = "#{appPath}/#{rel}"
+			path = "#{@path}/#{rel}"
 			log.trace "Making directory #{path}"
 			fs.mkdir path, (err) ->
 				if err and err.code isnt 'EEXIST'
@@ -266,7 +293,7 @@ module.exports = class App
 			'views/error404.jade' # TODO: Allow for other template engines.
 		]
 
-		dequeue = ->
+		dequeue = =>
 			rel = queue.shift()
 			if rel?
 				if /\./.test rel
@@ -274,13 +301,11 @@ module.exports = class App
 				else
 					mkdir rel, dequeue
 			else
-				newApp.updateConfig config
-				if callback
-					callback()
+				@updateConfig @config
+				@start()
 
 		dequeue()
 
-		newApp = new App name, config
 
 
 	###
@@ -288,7 +313,12 @@ module.exports = class App
 	###
 	delete: ->
 		log.warn "Deleting app #{@name}"
+		@stop()
 		deleted = "#{process.radeditRoot}/.deleted"
 		fs.mkdir deleted, =>
-			fs.rename @path, "#{deleted}/#{@name}"
-
+			fs.rename @path, "#{deleted}/#{@name}", (err) =>
+				if err
+					throw err
+				else
+					delete radedit.apps[@name]
+					

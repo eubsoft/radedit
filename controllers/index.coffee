@@ -6,7 +6,6 @@ log = radedit.log
 io = radedit.io
 App = radedit.App
 
-
 app.get '/', (request, response) ->
 	response.view 'index',
 		appPath: radedit.appPath
@@ -14,14 +13,13 @@ app.get '/', (request, response) ->
 
 
 app.get '/config', (request, response) ->
-	name = request.query.name
-	port = request.query.port
+	name = request.query.app
 	appObject = radedit.apps[name]
 	if appObject
 		appConfig = getAppConfig appObject
 	else
 		appConfig = 
-			port: port
+			port: request.query.port
 			globals: 'log, app, io, fs, http, https'
 			configLanguage: 'CoffeeScript'
 			scriptingLanguage: 'CoffeeScript'
@@ -40,14 +38,16 @@ app.get '/config', (request, response) ->
 
 app.get '/save-config', (request, response) ->
 	config = request.query
-	name = config.name
-	if name
-		appObject = radedit.apps[name]
-		if appObject
-			appObject.updateConfig config
-		else
-			radedit.apps[name] = App.make config
+	name = config.oldName
+	appObject = radedit.apps[name]
+	if appObject
+		delete config.oldName
+		appObject.updateConfig config
+	else
+		App.make config
 	response.redirect '/'
+	emitApps()
+
 
 app.get '/delete', (request, response) ->
 	name = request.query.app
@@ -55,8 +55,9 @@ app.get '/delete', (request, response) ->
 		appObject = radedit.apps[name]
 		if appObject
 			appObject.delete()
-			delete radedit.apps[name]
 	response.redirect '/'
+	emitApps()
+
 
 getAppList = ->
 	appList = []
@@ -66,9 +67,9 @@ getAppList = ->
 		appList.push config
 	return appList
 
+
 getAppConfig = (appObject) ->
 	config = JSON.parse JSON.stringify appObject.config
-	config.name = appObject.name
 	return config
 
 
@@ -79,12 +80,18 @@ daemonActions =
 routeDaemonAction = (action, status) ->
 	app.get "/#{action}", (request, response) ->
 		appName = request.query.app
-		a = radedit.apps[appName]
-		if a
-			a[action]()
-			io.sockets.emit "radedit:#{status}", appName
+		appObject = radedit.apps[appName]
+		if appObject
+			appObject[action]()
+			emitApps()
 		response.send {}
+
+
+emitApps = ->
+	io.sockets.emit "radedit:apps", getAppList()
+
 
 for own action, status of daemonActions
 	routeDaemonAction action, status
+
 
