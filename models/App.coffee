@@ -136,7 +136,7 @@ module.exports = class App
 
 			# Delay monitoring to allow for startup time.
 			@stayOn = false
-			setTimeout ->
+			setTimeout =>
 				@stayOn = true
 				@monitor()
 			, STARTUP_GRACE_PERIOD
